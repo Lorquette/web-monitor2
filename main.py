@@ -80,7 +80,7 @@ def scrape_site(site, seen_products, available_products):
         page = browser.new_page()
 
         def check_if_preorderable(product_url):
-            page.goto(product_url, timeout=60000)
+            page.goto(product_url, timeout=5000)
             time.sleep(2)  # Vänta lite för att sidan ska ladda klart
             buy_buttons = page.locator(site["buy_button_selector"])
             return buy_buttons.count() > 0
@@ -91,10 +91,10 @@ def scrape_site(site, seen_products, available_products):
             else:
                 url = site["url"]
             print(f"Hämtar: {url}")
-            page.goto(url, timeout=60000)
-
+            page.goto(url, timeout=5000)
+            print("Sida laddad, scrollar...")
             scroll_to_load_all(page, site["product_selector"])
-
+            print("Scrollning klar")
             products = page.locator(product_selector)
             count = products.count()
             print(f"Totalt hittade produkter: {count}")
