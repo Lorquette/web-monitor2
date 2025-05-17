@@ -42,16 +42,26 @@ def send_discord_message(message):
 def product_matches_keywords(name):
     return any(re.search(keyword, name, re.IGNORECASE) for keyword in KEYWORDS)
 
-def scroll_to_load_all(page):
-    """Scrolla ned på sidan successivt tills inget mer innehåll laddas."""
-    previous_height = page.evaluate("document.body.scrollHeight")
-    while True:
+def scroll_to_load_all(page, product_selector):
+    import time
+
+    previous_count = 0
+    max_attempts = 10
+    attempts = 0
+
+    while attempts < max_attempts:
         page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-        time.sleep(2)  # Vänta så att nytt innehåll laddas
-        new_height = page.evaluate("document.body.scrollHeight")
-        if new_height == previous_height:
+        time.sleep(2)
+
+        current_count = page.locator(product_selector).count()
+        print(f"Scrollförsök {attempts + 1}: {current_count} produkter")
+
+        if current_count == previous_count:
+            print("Inga fler produkter laddades.")
             break
-        previous_height = new_height
+
+        previous_count = current_count
+        attempts += 1
 
 def scrape_site(site, seen_products, available_products):
     product_selector = site["product_selector"]
@@ -83,7 +93,7 @@ def scrape_site(site, seen_products, available_products):
             print(f"Hämtar: {url}")
             page.goto(url, timeout=60000)
 
-            scroll_to_load_all(page)
+            scroll_to_load_all(page, site["product_selector"])
 
             products = page.locator(product_selector)
             count = products.count()
