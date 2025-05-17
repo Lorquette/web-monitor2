@@ -154,7 +154,7 @@ def main():
     any_changes = False
 
     for site in sites:
-        print(f"Skannar: {site.get('name', site['url'])}")
+        print(f"Skannar: {site.get('name') or site.get('url') or site.get('url_pattern') or 'Okänd site'}")
         changed = scrape_site(site, seen_products, available_products)
         any_changes = any_changes or changed
 
