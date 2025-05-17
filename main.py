@@ -69,6 +69,12 @@ def scrape_site(site, seen_products, available_products):
         browser = p.chromium.launch()
         page = browser.new_page()
 
+        def check_if_preorderable(product_url):
+            page.goto(product_url, timeout=60000)
+            time.sleep(2)  # Vänta lite för att sidan ska ladda klart
+            buy_buttons = page.locator(site["buy_button_selector"])
+            return buy_buttons.count() > 0
+
         for page_num in range(start_page, start_page + max_pages):
             if url_pattern:
                 url = url_pattern.format(page=page_num)
@@ -98,7 +104,27 @@ def scrape_site(site, seen_products, available_products):
                         new_seen = True
                         send_discord_message(f"**Ny produkt hittad:** {name} ({url})")
 
-                    in_stock = any(keyword in availability_text for keyword in availability_in_stock)
+                    # Hantera produkter som inte är släppta än
+                    is_not_released = False
+                    if site.get("check_product_page_if_not_released", False):
+                        try:
+                            not_released_elem = product_elem.locator(site["not_released_selector"])
+                            is_not_released = not_released_elem.count() > 0
+                        except Exception:
+                            is_not_released = False
+
+                    if is_not_released:
+                        product_link = product_elem.locator(site["product_link_selector"]).get_attribute("href")
+                        if product_link:
+                            if product_link.startswith("/"):
+                                base_url = re.match(r"(https?://[^/]+)", url).group(1)
+                                product_link = base_url + product_link
+                            in_stock = check_if_preorderable(product_link)
+                        else:
+                            in_stock = False
+                    else:
+                        in_stock = any(keyword in availability_text for keyword in availability_in_stock)
+
                     was_available = product_hash in available_products
 
                     if in_stock and not was_available:
