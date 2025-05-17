@@ -1,10 +1,19 @@
+
 [
   {
-    "name": "Webhallen",
-    "url": "https://www.webhallen.com/se/product/377253",
-    "keywords": ["Pokémon", "Destined Rivals"],
-    "selector": "h1"
-  },
+    "name": "Webhallen Pokémon",
+    "url_pattern": "https://www.webhallen.com/se/category/4661-Pokmon?page={page}&sortBy=latest",
+    "start_page": 1,
+    "max_pages": 5,
+    "product_selector": ".panel-thin.product-grid-item",
+    "name_selector": ".product-list-item-title a",
+    "availability_selector": "#web_stock span.pull-left",
+    "availability_in_stock": ["i lager", "in stock", "förboka"],
+    "check_product_page_if_not_released": true,
+    "not_released_selector": ".stock-icon-notreleased",
+    "product_link_selector": ".product-list-item-title a",
+    "buy_button_selector": "button.buy-button, button.add-to-cart-button"
+  }
   {
     "name": "Alphaspel",
     "url": "https://alphaspel.se/1762-pokemon-tcg/",
