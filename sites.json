@@ -14,10 +14,4 @@
     "product_link_selector": ".product-list-item-title a",
     "buy_button_selector": "button.buy-button, button.add-to-cart-button"
   }
-  {
-    "name": "Alphaspel",
-    "url": "https://alphaspel.se/1762-pokemon-tcg/",
-    "keywords": ["Destined Rivals", "Prismatic Evolutions"],
-    "selector": ".product-title"
-  }
 ]
