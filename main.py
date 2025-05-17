@@ -115,7 +115,7 @@ def scrape_site(site, seen_products, available_products):
                         seen_products[product_hash] = name
                         new_seen = True
                         send_discord_message(f"**Ny produkt hittad:** {name} ({url})")
-
+"""
                     # Hantera produkter som inte är släppta än
                     is_not_released = False
                     if site.get("check_product_page_if_not_released", False):
@@ -136,7 +136,7 @@ def scrape_site(site, seen_products, available_products):
                             in_stock = False
                     else:
                         in_stock = any(keyword in availability_text for keyword in availability_in_stock)
-
+"""
                     was_available = product_hash in available_products
 
                     if in_stock and not was_available:
