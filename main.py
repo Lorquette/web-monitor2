@@ -54,60 +54,66 @@ def scroll_to_load_all(page):
         previous_height = new_height
 
 def scrape_site(site, seen_products, available_products):
-    url = site["url"]
     product_selector = site["product_selector"]
     name_selector = site["name_selector"]
     availability_selector = site["availability_selector"]
     availability_in_stock = site.get("availability_in_stock", ["i lager", "in stock", "available"])
-    
+    url_pattern = site.get("url_pattern")
+    start_page = site.get("start_page", 1)
+    max_pages = site.get("max_pages", 1)
+
     new_seen = False
     new_available = False
 
     with sync_playwright() as p:
         browser = p.chromium.launch()
         page = browser.new_page()
-        page.goto(url, timeout=60000)
 
-        # Scrolla för att ladda dynamiskt innehåll (om sidan gör så)
-        scroll_to_load_all(page)
+        for page_num in range(start_page, start_page + max_pages):
+            if url_pattern:
+                url = url_pattern.format(page=page_num)
+            else:
+                url = site["url"]
+            print(f"Hämtar: {url}")
+            page.goto(url, timeout=60000)
 
-        products = page.locator(product_selector)
-        count = products.count()
+            scroll_to_load_all(page)
 
-        for i in range(count):
-            try:
-                product_elem = products.nth(i)
-                name = product_elem.locator(name_selector).inner_text().strip()
-                availability_text = product_elem.locator(availability_selector).inner_text().strip().lower()
+            products = page.locator(product_selector)
+            count = products.count()
 
-                if not product_matches_keywords(name):
-                    continue
+            for i in range(count):
+                try:
+                    product_elem = products.nth(i)
+                    name = product_elem.locator(name_selector).inner_text().strip()
+                    availability_text = product_elem.locator(availability_selector).inner_text().strip().lower()
 
-                product_hash = hash_string(name)
+                    if not product_matches_keywords(name):
+                        continue
 
-                # Kolla om produkt är ny (inte sett tidigare)
-                if product_hash not in seen_products:
-                    seen_products[product_hash] = name
-                    new_seen = True
-                    send_discord_message(f"**Ny produkt hittad:** {name} ({url})")
-                
-                # Kolla om produkt är tillgänglig (lagerstatus)
-                in_stock = any(keyword in availability_text for keyword in availability_in_stock)
-                was_available = product_hash in available_products
+                    product_hash = hash_string(name)
 
-                if in_stock and not was_available:
-                    available_products[product_hash] = name
-                    new_available = True
-                    send_discord_message(f"**Produkt åter i lager:** {name} ({url})")
+                    if product_hash not in seen_products:
+                        seen_products[product_hash] = name
+                        new_seen = True
+                        send_discord_message(f"**Ny produkt hittad:** {name} ({url})")
 
-                elif not in_stock and was_available:
-                    # Om produkten är slut i lager, ta bort från available_products
-                    del available_products[product_hash]
+                    in_stock = any(keyword in availability_text for keyword in availability_in_stock)
+                    was_available = product_hash in available_products
 
-            except Exception as e:
-                print(f"Fel vid hantering av produkt {i} på {url}: {e}")
+                    if in_stock and not was_available:
+                        available_products[product_hash] = name
+                        new_available = True
+                        send_discord_message(f"**Produkt åter i lager:** {name} ({url})")
+
+                    elif not in_stock and was_available:
+                        del available_products[product_hash]
+
+                except Exception as e:
+                    print(f"Fel vid hantering av produkt {i} på {url}: {e}")
 
         browser.close()
+
     return new_seen or new_available
 
 def main():
