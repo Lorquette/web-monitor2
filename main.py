@@ -97,13 +97,15 @@ def scrape_site(site, seen_products, available_products):
 
             products = page.locator(product_selector)
             count = products.count()
-
+            print(f"Totalt hittade produkter: {count}")
+            
             for i in range(count):
                 try:
                     product_elem = products.nth(i)
                     name = product_elem.locator(name_selector).inner_text().strip()
                     availability_text = product_elem.locator(availability_selector).first.inner_text().strip().lower()
-
+                    print(f"{i + 1}: {name}")
+                    
                     if not product_matches_keywords(name):
                         continue
 
