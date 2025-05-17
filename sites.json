@@ -1,0 +1,14 @@
+[
+  {
+    "name": "Webhallen",
+    "url": "https://www.webhallen.com/se/product/377253",
+    "keywords": ["Pokémon", "Destined Rivals"],
+    "selector": "h1"
+  },
+  {
+    "name": "Alphaspel",
+    "url": "https://alphaspel.se/1762-pokemon-tcg/",
+    "keywords": ["Destined Rivals", "Prismatic Evolutions"],
+    "selector": ".product-title"
+  }
+]
