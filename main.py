@@ -92,7 +92,7 @@ def scrape_site(site, seen_products, available_products):
                 try:
                     product_elem = products.nth(i)
                     name = product_elem.locator(name_selector).inner_text().strip()
-                    availability_text = product_elem.locator(availability_selector).inner_text().strip().lower()
+                    availability_text = product_elem.locator(availability_selector).first.inner_text().strip().lower()
 
                     if not product_matches_keywords(name):
                         continue
