@@ -145,28 +145,47 @@ def scrape_site(site, seen_products, available_products):
                         )
 
                     # Kontrollera om produkten ej är släppt än, och i så fall kolla förbeställning på produktsidan
+                    # Börja med att anta att produkten *inte* är "not released" (alltså förbokningsbar ännu)
                     is_not_released = False
+                    
+                    # Kolla om vi har konfigurerat att vi ska göra en extra kontroll på produktsidan
+                    # för att avgöra om produkten inte är släppt än (t.ex. en förbokning)
                     if site.get("check_product_page_if_not_released", False):
                         try:
+                            # Försök hitta elementet som indikerar "inte släppt" på produktlistan,
+                            # t.ex. en ikon eller text med en speciell CSS-klass
                             not_released_elem = product_elem.locator(site["not_released_selector"])
+                    
+                            # Om elementet finns (räknas > 0) så sätt is_not_released till True
                             is_not_released = not_released_elem.count() > 0
                         except Exception:
+                            # Om något går fel (t.ex. elementet saknas) så ignorerar vi det och sätter False
                             is_not_released = False
-
+                    
+                    # Om produkten *är* markerad som "not released"
                     if is_not_released:
                         product_link = None
                         try:
+                            # Hämta länken till produktens egen sida (där vi kan kolla mer detaljerat)
                             product_link = product_elem.locator(site["product_link_selector"]).get_attribute("href")
+                    
+                            # Om länken är relativ (börjar med "/"), bygg en fullständig URL genom att
+                            # ta bas-URL från sidan vi just besöker och lägga till sökvägen
                             if product_link and product_link.startswith("/"):
                                 base_url = re.match(r"(https?://[^/]+)", url).group(1)
                                 product_link = base_url + product_link
                         except Exception:
+                            # Om något går fel här så ignorerar vi länken (den blir None)
                             pass
-
+                    
+                        # Om vi lyckades få en produktlänk
                         if product_link:
+                            # Gör en extra kontroll på produktens egen sida för att se om den kan förbokas
                             in_stock = check_if_preorderable(product_link)
                         else:
+                            # Om vi inte har någon länk kan vi inte kontrollera, anta ej i lager
                             in_stock = False
+
                     else:
                         # Om produkten är släppt, kolla lagerstatus från produktlistan
                         in_stock = any(keyword in availability_text for keyword in availability_in_stock)
