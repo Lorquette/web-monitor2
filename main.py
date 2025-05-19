@@ -62,7 +62,8 @@ def scroll_to_load_all(page, product_selector):
 
         previous_count = current_count
         attempts += 1
-
+    time.sleep(2)
+    
 def scrape_site(site, seen_products, available_products):
     product_selector = site["product_selector"]
     name_selector = site["name_selector"]
