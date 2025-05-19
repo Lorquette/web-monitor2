@@ -56,7 +56,7 @@ def scroll_to_load_all(page, product_selector):
     while attempts < max_attempts:
         print(f"Innan scrollförsök {attempts + 1}...", flush=True)
         try:
-            page.evaluate("window.scrollTo(0, document.body.scrollHeight)", timeout=3000)
+            page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
             print("Scrollning utförd.", flush=True)
         except Exception as e:
             print(f"Fel vid scrollning: {e}", flush=True)
@@ -112,7 +112,7 @@ def scrape_site(site, seen_products, available_products):
                 page.goto(product_url, timeout=5000, wait_until="domcontentloaded")
                 print(f"Sida laddad på {time.time()-start_pre:.2f} sek", flush=True)
 
-                count = page.locator(site["buy_button_selector"]).count(timeout=2000)
+                count = page.locator(site["buy_button_selector"]).count()
                 print(f"Antal buy-buttons: {count}", flush=True)
                 return count > 0
 
@@ -149,7 +149,7 @@ def scrape_site(site, seen_products, available_products):
                 product_start = time.time()
                 try:
                     product_elem = products.nth(i)
-                    name = product_elem.locator(name_selector).inner_text().strip()
+                    name = product_elem.locator(name_selector).text_content(timeout=2000).strip()
                     print(f"Produkt {i+1}/{count}: {name}", flush=True)
 
                     availability_text = ""
