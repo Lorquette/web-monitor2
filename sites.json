@@ -2,7 +2,7 @@
 [
   {
     "name": "Webhallen Pokémon",
-    "url": "https://www.webhallen.com/se/category/4661-Pokmon?sortBy=latest"
+    "url": "https://www.webhallen.com/se/category/4661-Pokmon?sortBy=latest",
     "product_selector": ".panel-thin.product-grid-item",
     "name_selector": ".product-list-item-title a",
     "availability_selector": "#web_stock span.pull-left",
