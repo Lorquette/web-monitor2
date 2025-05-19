@@ -96,14 +96,25 @@ def scrape_site(site, seen_products, available_products):
                                            "Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.43")
 
      # Funktion för att kolla om en produkt kan förbeställas (eller är tillgänglig)
+        import time
+        
         def check_if_preorderable(product_url):
+            print(f"Startar preorder-check: {product_url}")
+            start = time.time()
             try:
-                page.goto(product_url, timeout=5000)
-                time.sleep(2)  # Låt sidan ladda in element
-                return page.locator(site["buy_button_selector"]).count() > 0
+                page.goto(product_url, timeout=5000, wait_until="domcontentloaded")
+                print(f"Sida laddad på {time.time()-start:.2f} sek")
+                
+                # Kolla om knappen finns, med kort timeout
+                count = page.locator(site["buy_button_selector"]).count(timeout=2000)
+                print(f"Antal buy-buttons: {count}")
+                return count > 0
+            
             except Exception as e:
                 print(f"Fel vid kontroll av förbeställning på {product_url}: {e}")
                 return False
+            finally:
+                print(f"Preorder-check klar på {time.time()-start:.2f} sek")
     
         # Loopa igenom alla URL:er vi vill skanna (t.ex. olika sidor i en lista)
         for url in urls_to_scrape:
