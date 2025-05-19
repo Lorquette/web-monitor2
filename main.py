@@ -49,115 +49,125 @@ def scroll_to_load_all(page, product_selector):
     max_attempts = 10
     attempts = 0
 
+    print(f"Startar scrollning för att ladda alla produkter med selector: '{product_selector}'")
+
     while attempts < max_attempts:
-        page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-        time.sleep(2)
-
-        current_count = page.locator(product_selector).count()
-        print(f"Scrollförsök {attempts + 1}: {current_count} produkter")
-
+        print(f"\nScrollförsök {attempts + 1} av max {max_attempts}...")
+        try:
+            page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+            print("Scrollade till botten av sidan.")
+        except Exception as e:
+            print(f"Fel vid scrollning: {e}")
+            break
+        
+        time.sleep(2)  # Vänta på att eventuellt mer innehåll laddas in
+        
+        try:
+            current_count = page.locator(product_selector).count()
+            print(f"Antal produkter efter scrollning: {current_count}")
+        except Exception as e:
+            print(f"Fel vid räkning av produkter: {e}")
+            break
+        
         if current_count == previous_count:
-            print("Inga fler produkter laddades.")
+            print("Inga fler produkter laddades efter scrollningen. Avslutar scroll-loopen.")
             break
 
         previous_count = current_count
         attempts += 1
+
+    print("Scrollning klar.")
     time.sleep(2)
     
+import time
+
 def scrape_site(site, seen_products, available_products):
-    # Läs ut nödvändiga selectors och inställningar från sites.json
     product_selector = site["product_selector"]
     name_selector = site["name_selector"]
     availability_selector = site["availability_selector"]
     availability_in_stock = site.get("availability_in_stock", ["i lager", "in stock", "available"])
-    # Bygg listan med URL:er att skanna
-    # Om sajten har paginering (via 'url_pattern'), bygg en lista med alla sid-URL:er
+
     if "url_pattern" in site:
         urls_to_scrape = [site["url_pattern"].format(page=p) for p in range(start_page, start_page + max_pages)]
-    
-    # Om sajten bara har en statisk URL (utan paginering), använd den direkt
     elif "url" in site:
         urls_to_scrape = [site["url"]]
-    
-    # Fångar fel om varken 'url' eller 'url_pattern' finns angivet
     else:
         print("Ingen giltig URL-konfiguration för siten.")
         return False
-    
-    # Flaggor för att hålla koll på om vi hittar nya produkter eller produkter i lager
+
     new_seen = False
     new_available = False
-    
-    # Startar en Playwright-session
+
     with sync_playwright() as p:
         browser = p.chromium.launch()
         page = browser.new_page(user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
                                            "AppleWebKit/537.36 (KHTML, like Gecko) "
                                            "Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.43")
 
-     # Funktion för att kolla om en produkt kan förbeställas (eller är tillgänglig)
-        import time
-        
         def check_if_preorderable(product_url):
             print(f"Startar preorder-check: {product_url}")
-            start = time.time()
+            start_pre = time.time()
             try:
                 page.goto(product_url, timeout=5000, wait_until="domcontentloaded")
-                print(f"Sida laddad på {time.time()-start:.2f} sek")
-                
-                # Kolla om knappen finns, med kort timeout
+                print(f"Sida laddad på {time.time()-start_pre:.2f} sek")
+
                 count = page.locator(site["buy_button_selector"]).count(timeout=2000)
                 print(f"Antal buy-buttons: {count}")
                 return count > 0
-            
+
             except Exception as e:
                 print(f"Fel vid kontroll av förbeställning på {product_url}: {e}")
                 return False
             finally:
-                print(f"Preorder-check klar på {time.time()-start:.2f} sek")
-    
-        # Loopa igenom alla URL:er vi vill skanna (t.ex. olika sidor i en lista)
+                print(f"Preorder-check klar på {time.time()-start_pre:.2f} sek")
+
         for url in urls_to_scrape:
-            print(f"Hämtar: {url}")
+            print(f"\n-- Hämtar: {url} --")
+            start_page_load = time.time()
             try:
-                # Ladda in sidan
                 page.goto(url, timeout=10000)
+                print(f"Sida laddad på {time.time()-start_page_load:.2f} sek")
             except Exception as e:
                 print(f"Kunde inte ladda {url}: {e}")
                 continue
-    
-            # Scrolla ner så att hela produktlistan laddas in (särskilt viktigt vid lazy loading)
-            scroll_to_load_all(page, product_selector)
-    
-            # Hämta alla produkt-element på sidan
-            products = page.locator(product_selector)
-            count = products.count()
-            print(f"Totalt hittade produkter: {count}")
 
-            # Loopar igenom varje produkt på sidan
+            print("Startar scrollning för att ladda produkter...")
+            scroll_start = time.time()
+            scroll_to_load_all(page, product_selector)
+            print(f"Scrollning klar efter {time.time()-scroll_start:.2f} sek")
+
+            products = page.locator(product_selector)
+            try:
+                count = products.count()
+                print(f"Totalt hittade produkter: {count}")
+            except Exception as e:
+                print(f"Fel vid räkning av produkter: {e}")
+                continue
+
             for i in range(count):
+                product_start = time.time()
                 try:
                     product_elem = products.nth(i)
                     name = product_elem.locator(name_selector).inner_text().strip()
+                    print(f"Produkt {i+1}/{count}: {name}")
 
-                    # Läs tillgänglighetstext, eller tom om ej hittas
                     availability_text = ""
                     try:
                         availability_text = product_elem.locator(availability_selector).first.inner_text().strip().lower()
                     except Exception:
                         pass
+                    print(f"  Tillgänglighetstext: '{availability_text}'")
 
-                    # Hoppa över produkter som inte matchar nyckelorden
                     if not product_matches_keywords(name):
+                        print(f"  Hoppar över produkten då den inte matchar nyckelord.")
                         continue
 
                     product_hash = hash_string(name)
 
-                    # Om produkten är helt ny, markera och skicka notis
                     if product_hash not in seen_products:
+                        print(f"  Ny produkt upptäckt!")
                         seen_products[product_hash] = name
                         new_seen = True
-                        # Skicka snyggt formaterad Discord-notis för ny produkt
                         send_discord_message(
                             f"🎉 **Ny produkt upptäckt!**\n"
                             f"**Namn:** `{name}`\n"
@@ -166,56 +176,38 @@ def scrape_site(site, seen_products, available_products):
                             f"🔍 Kontrollera snabbt innan den försvinner!"
                         )
 
-                    # Kontrollera om produkten ej är släppt än, och i så fall kolla förbeställning på produktsidan
-                    # Börja med att anta att produkten *inte* är "not released" (alltså förbokningsbar ännu)
                     is_not_released = False
-                    
-                    # Kolla om vi har konfigurerat att vi ska göra en extra kontroll på produktsidan
-                    # för att avgöra om produkten inte är släppt än (t.ex. en förbokning)
                     if site.get("check_product_page_if_not_released", False):
                         try:
-                            # Försök hitta elementet som indikerar "inte släppt" på produktlistan,
-                            # t.ex. en ikon eller text med en speciell CSS-klass
                             not_released_elem = product_elem.locator(site["not_released_selector"])
-                    
-                            # Om elementet finns (räknas > 0) så sätt is_not_released till True
                             is_not_released = not_released_elem.count() > 0
                         except Exception:
-                            # Om något går fel (t.ex. elementet saknas) så ignorerar vi det och sätter False
                             is_not_released = False
-                    
-                    # Om produkten *är* markerad som "not released"
+                    print(f"  Är produkten inte släppt än? {is_not_released}")
+
                     if is_not_released:
                         product_link = None
                         try:
-                            # Hämta länken till produktens egen sida (där vi kan kolla mer detaljerat)
                             product_link = product_elem.locator(site["product_link_selector"]).get_attribute("href")
-                    
-                            # Om länken är relativ (börjar med "/"), bygg en fullständig URL genom att
-                            # ta bas-URL från sidan vi just besöker och lägga till sökvägen
                             if product_link and product_link.startswith("/"):
                                 base_url = re.match(r"(https?://[^/]+)", url).group(1)
                                 product_link = base_url + product_link
                         except Exception:
-                            # Om något går fel här så ignorerar vi länken (den blir None)
                             pass
-                    
-                        # Om vi lyckades få en produktlänk
+                        print(f"  Produktlänk: {product_link}")
+
                         if product_link:
-                            # Gör en extra kontroll på produktens egen sida för att se om den kan förbokas
                             in_stock = check_if_preorderable(product_link)
                         else:
-                            # Om vi inte har någon länk kan vi inte kontrollera, anta ej i lager
                             in_stock = False
-
                     else:
-                        # Om produkten är släppt, kolla lagerstatus från produktlistan
                         in_stock = any(keyword in availability_text for keyword in availability_in_stock)
+                    print(f"  I lager (eller preorderbar): {in_stock}")
 
                     was_available = product_hash in available_products
 
-                    # Om produkten är ny i lager, markera och skicka notis
                     if in_stock and not was_available:
+                        print(f"  Produkten är tillbaka i lager!")
                         available_products[product_hash] = name
                         new_available = True
                         send_discord_message(
@@ -225,17 +217,17 @@ def scrape_site(site, seen_products, available_products):
                             f"**Sida:** {url}\n"
                             f"🎯 Skynda att köp innan den tar slut igen!"
                         )
-                    # Om produkten ej längre finns i lager men tidigare fanns, ta bort
                     elif not in_stock and was_available:
+                        print(f"  Produkten finns inte längre i lager, tas bort.")
                         del available_products[product_hash]
 
                 except Exception as e:
                     print(f"Fel vid hantering av produkt {i} på {url}: {e}")
+                finally:
+                    print(f"  Hantering av produkt {i+1} klar på {time.time()-product_start:.2f} sek")
 
-        # Stäng ner browsern när skanningen är klar
         browser.close()
 
-    # Returnera True om något nytt upptäcktes eller åter blev tillgängligt
     return new_seen or new_available
 
 def main():
