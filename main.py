@@ -70,44 +70,55 @@ def scrape_site(site, seen_products, available_products):
     name_selector = site["name_selector"]
     availability_selector = site["availability_selector"]
     availability_in_stock = site.get("availability_in_stock", ["i lager", "in stock", "available"])
-    url_pattern = site.get("url_pattern")
-    start_page = site.get("start_page", 1)
-    max_pages = site.get("max_pages", 1)
-
-    new_seen = False   # Flagga för om nya produkter hittades
-    new_available = False  # Flagga för om produkter blivit tillgängliga igen
-
+    # Bygg listan med URL:er att skanna
+    # Om sajten har paginering (via 'url_pattern'), bygg en lista med alla sid-URL:er
+    if "url_pattern" in site:
+        urls_to_scrape = [site["url_pattern"].format(page=p) for p in range(start_page, start_page + max_pages)]
+    
+    # Om sajten bara har en statisk URL (utan paginering), använd den direkt
+    elif "url" in site:
+        urls_to_scrape = [site["url"]]
+    
+    # Fångar fel om varken 'url' eller 'url_pattern' finns angivet
+    else:
+        print("Ingen giltig URL-konfiguration för siten.")
+        return False
+    
+    # Flaggor för att hålla koll på om vi hittar nya produkter eller produkter i lager
+    new_seen = False
+    new_available = False
+    
+    # Startar en Playwright-session
     with sync_playwright() as p:
-        # Starta Chromium-browser för att kunna interagera med sidan
         browser = p.chromium.launch()
         page = browser.new_page(user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
                                            "AppleWebKit/537.36 (KHTML, like Gecko) "
                                            "Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.43")
 
-        # Funktion för att kolla om produkt går att förbeställa på produktsidan
+     # Funktion för att kolla om en produkt kan förbeställas (eller är tillgänglig)
         def check_if_preorderable(product_url):
             try:
                 page.goto(product_url, timeout=5000)
-                time.sleep(2)  # Vänta att sidan laddas
-                buy_buttons = page.locator(site["buy_button_selector"])
-                return buy_buttons.count() > 0
+                time.sleep(2)  # Låt sidan ladda in element
+                return page.locator(site["buy_button_selector"]).count() > 0
             except Exception as e:
                 print(f"Fel vid kontroll av förbeställning på {product_url}: {e}")
                 return False
-
-        # Loopar igenom alla sidor som ska skannas enligt url_pattern
-        for page_num in range(start_page, start_page + max_pages):
-            if url_pattern:
-                url = url_pattern.format(page=page_num)
-            else:
-                url = site.get("url")
+    
+        # Loopa igenom alla URL:er vi vill skanna (t.ex. olika sidor i en lista)
+        for url in urls_to_scrape:
             print(f"Hämtar: {url}")
-            page.goto(url, timeout=10000)
-
-            # Scrolla för att ladda alla produkter dynamiskt
+            try:
+                # Ladda in sidan
+                page.goto(url, timeout=10000)
+            except Exception as e:
+                print(f"Kunde inte ladda {url}: {e}")
+                continue
+    
+            # Scrolla ner så att hela produktlistan laddas in (särskilt viktigt vid lazy loading)
             scroll_to_load_all(page, product_selector)
-
-            # Hämta alla produkter enligt selector
+    
+            # Hämta alla produkt-element på sidan
             products = page.locator(product_selector)
             count = products.count()
             print(f"Totalt hittade produkter: {count}")
