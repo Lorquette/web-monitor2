@@ -45,39 +45,41 @@ def product_matches_keywords(name):
 def scroll_to_load_all(page, product_selector):
     import time
 
+    start = time.time()
+    print(f"Scroll-funktionen startar vid {start:.2f} sek")
+
     previous_count = 0
     max_attempts = 10
     attempts = 0
 
-    print(f"Startar scrollning för att ladda alla produkter med selector: '{product_selector}'")
-
     while attempts < max_attempts:
-        print(f"\nScrollförsök {attempts + 1} av max {max_attempts}...")
+        print(f"Innan scrollförsök {attempts + 1}...")
         try:
-            page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-            print("Scrollade till botten av sidan.")
+            page.evaluate("window.scrollTo(0, document.body.scrollHeight)", timeout=3000)
+            print("Scrollning utförd.")
         except Exception as e:
             print(f"Fel vid scrollning: {e}")
-            break
-        
-        time.sleep(2)  # Vänta på att eventuellt mer innehåll laddas in
-        
+            break  # Avbryt scroll-loop vid fel
+
+        time.sleep(2)  # Vänta så att nya produkter hinner laddas
+
         try:
             current_count = page.locator(product_selector).count()
-            print(f"Antal produkter efter scrollning: {current_count}")
+            print(f"Scrollförsök {attempts + 1}: {current_count} produkter")
         except Exception as e:
-            print(f"Fel vid räkning av produkter: {e}")
+            print(f"Fel vid hämtning av produktantal: {e}")
             break
-        
+
         if current_count == previous_count:
-            print("Inga fler produkter laddades efter scrollningen. Avslutar scroll-loopen.")
+            print("Inga fler produkter laddades.")
             break
 
         previous_count = current_count
         attempts += 1
 
-    print("Scrollning klar.")
     time.sleep(2)
+    end = time.time()
+    print(f"Scroll-funktionen avslutades efter {end - start:.2f} sekunder")
     
 import time
 
@@ -133,7 +135,9 @@ def scrape_site(site, seen_products, available_products):
 
             print("Startar scrollning för att ladda produkter...")
             scroll_start = time.time()
+            print("Innan scroll_to_load_all...")
             scroll_to_load_all(page, product_selector)
+            print("Efter scroll_to_load_all...")
             print(f"Scrollning klar efter {time.time()-scroll_start:.2f} sek")
 
             products = page.locator(product_selector)
