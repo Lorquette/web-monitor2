@@ -130,21 +130,6 @@ def scrape_site(site, seen_products, available_products):
     name_selector = site["name_selector"]
     availability_selector = site.get("availability_selector")  # Behåll för fallback, men används ej längre
     availability_in_stock = site.get("availability_in_stock", ["i lager", "in stock", "available"])
-    price = None
-    price_selector = site.get("price_selector")
-    if price_selector:
-        try:
-            price = product_elem.locator(price_selector).text_content(timeout=2000).strip()
-        except Exception:
-            price = None
-
-    base_url = site.get("base_url", "")
-    product_link_elem = product_elem.locator(site.get("product_link_selector"))
-    product_href = ""
-    try:
-        product_href = product_link_elem.get_attribute("href")
-    except Exception:
-        product_href = None
     
     if product_href and not product_href.startswith("http"):
         product_link = base_url.rstrip("/") + "/" + product_href.lstrip("/")
@@ -216,6 +201,28 @@ def scrape_site(site, seen_products, available_products):
                 product_start = time.time()
                 try:
                     product_elem = products.nth(i)
+
+                    price = None
+                    price_selector = site.get("price_selector")
+                    if price_selector:
+                        try:
+                            price = product_elem.locator(price_selector).text_content(timeout=2000).strip()
+                        except Exception:
+                            price = None
+                
+                    base_url = site.get("base_url", "")
+                    product_link_elem = product_elem.locator(site.get("product_link_selector"))
+                    product_href = ""
+                    try:
+                        product_href = product_link_elem.get_attribute("href")
+                    except Exception:
+                        product_href = None
+
+                    if product_href and not product_href.startswith("http"):
+                        product_link = base_url.rstrip("/") + "/" + product_href.lstrip("/")
+                    else:
+                        product_link = product_href or url
+                    
                     name = product_elem.locator(name_selector).text_content(timeout=2000).strip()
                     print(f"Produkt {i+1}/{count}: {name}", flush=True)
 
