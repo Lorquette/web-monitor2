@@ -13,7 +13,7 @@ SITES_FILE = "sites.json"
 DISCORD_WEBHOOK = os.getenv("DISCORD_WEBHOOK")
 
 KEYWORDS = [
-    "Pokémon", "Pokemon", "Destined Rivals", "Prismatic Evolutions"
+    "Pokémon", "Pokemon", "Destined Rivals", "Prismatic Evolutions", "Journey Together", "Palafin"
 ]
 
 def load_json(file_path):
