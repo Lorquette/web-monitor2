@@ -230,7 +230,57 @@ def scrape_site(site, seen_products, available_products):
         browser.close()
 
     return new_seen or new_available
+    
+def get_all_products(site):
+    product_selector = site["product_selector"]
+    name_selector = site["name_selector"]
+    availability_selector = site["availability_selector"]
 
+    products_list = []
+
+    with sync_playwright() as p:
+        browser = p.chromium.launch()
+        page = browser.new_page(user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                                           "AppleWebKit/537.36 (KHTML, like Gecko) "
+                                           "Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.43")
+
+        url = site.get("url") or (site.get("url_pattern").format(page=site.get("start_page", 1)) if "url_pattern" in site else None)
+        if not url:
+            print("Ingen giltig URL att hämta produkter ifrån.", flush=True)
+            browser.close()
+            return []
+
+        try:
+            page.goto(url, timeout=10000)
+            scroll_to_load_all(page, product_selector)
+            products = page.locator(product_selector)
+            count = products.count()
+        except Exception as e:
+            print(f"Fel vid hämtning av produkter: {e}", flush=True)
+            browser.close()
+            return []
+
+        for i in range(count):
+            try:
+                product_elem = products.nth(i)
+                name = product_elem.locator(name_selector).text_content(timeout=2000).strip()
+                availability_text = ""
+                try:
+                    availability_text = product_elem.locator(availability_selector).first.inner_text().strip()
+                except Exception:
+                    pass
+
+                products_list.append({
+                    "name": name,
+                    "availability_text": availability_text
+                })
+            except Exception as e:
+                print(f"Fel vid hämtning av produkt {i}: {e}", flush=True)
+
+        browser.close()
+
+    return products_list
+    
 def main():
     seen_products = load_json(SEEN_PRODUCTS_FILE)
     available_products = load_json(AVAILABLE_PRODUCTS_FILE)
@@ -249,6 +299,13 @@ def main():
 
     save_json(SEEN_PRODUCTS_FILE, seen_products)
     save_json(AVAILABLE_PRODUCTS_FILE, available_products)
+
+    # --- NYTT: skriv ut alla produkter från första siten för debugging ---
+    if sites:
+        print("\n--- Alla produkter på första siten ---", flush=True)
+        products = get_all_products(sites[0])
+        for prod in products:
+            print(f"Namn: {prod['name']} | Tillgänglighet: {prod['availability_text']}", flush=True)
 
     if not any_changes:
         print("Inga nya eller återkommande produkter upptäcktes.", flush=True)
