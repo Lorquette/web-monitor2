@@ -30,11 +30,27 @@ def save_json(file_path, data):
 def hash_string(s):
     return hashlib.sha256(s.encode("utf-8")).hexdigest()
 
-def send_discord_message(message):
+def send_discord_message(name, url, price, status, site_name):
     if not DISCORD_WEBHOOK:
         print("No Discord webhook set in environment variable.", flush=True)
         return
-    payload = {"content": message}
+    
+    embed = {
+        "title": name,
+        "url": url,
+        "color": 0x00FF00 if status == "Ny produkt" else 0xFFFF00,
+        "fields": [
+            {"name": "Pris", "value": price or "Okänt", "inline": True},
+            {"name": "Status", "value": status, "inline": True},
+            {"name": "Webbplats", "value": site_name, "inline": False},
+        ],
+        "footer": {"text": "Skynda att köpa innan den tar slut!"}
+    }
+    
+    payload = {
+        "embeds": [embed]
+    }
+    
     try:
         response = requests.post(DISCORD_WEBHOOK, json=payload)
         if response.status_code != 204:
@@ -114,7 +130,27 @@ def scrape_site(site, seen_products, available_products):
     name_selector = site["name_selector"]
     availability_selector = site.get("availability_selector")  # Behåll för fallback, men används ej längre
     availability_in_stock = site.get("availability_in_stock", ["i lager", "in stock", "available"])
+    price = None
+    price_selector = site.get("price_selector")
+    if price_selector:
+        try:
+            price = product_elem.locator(price_selector).text_content(timeout=2000).strip()
+        except Exception:
+            price = None
 
+    base_url = site.get("base_url", "")
+    product_link_elem = product_elem.locator(site.get("product_link_selector"))
+    product_href = ""
+    try:
+        product_href = product_link_elem.get_attribute("href")
+    except Exception:
+        product_href = None
+    
+    if product_href and not product_href.startswith("http"):
+        product_link = base_url.rstrip("/") + "/" + product_href.lstrip("/")
+    else:
+        product_link = product_href or url
+    
     if "url_pattern" in site:
         urls_to_scrape = [site["url_pattern"].format(page=p) for p in range(site.get("start_page", 1), site.get("start_page", 1) + site.get("max_pages", 1))]
     elif "url" in site:
@@ -197,13 +233,13 @@ def scrape_site(site, seen_products, available_products):
                         seen_products[product_hash] = name
                         new_seen = True
                         send_discord_message(
-                            f"🎉 **Ny produkt upptäckt!**\n"
-                            f"**Namn:** `{name}`\n"
-                            f"**Webbplats:** {site.get('name', url)}\n"
-                            f"**Sida:** {url}\n"
-                            f"🔍 Kontrollera snabbt innan den försvinner!"
+                            name=name,
+                            url=product_link or url,
+                            price=price,
+                            status="Ny produkt",
+                            site_name=site.get("name", url)
                         )
-
+                        
                     is_not_released = False
                     if site.get("check_product_page_if_not_released", False):
                         try:
@@ -239,12 +275,13 @@ def scrape_site(site, seen_products, available_products):
                         available_products[product_hash] = name
                         new_available = True
                         send_discord_message(
-                            f"✅ **Produkt tillbaka i lager!**\n"
-                            f"**Namn:** `{name}`\n"
-                            f"**Webbplats:** {site.get('name', url)}\n"
-                            f"**Sida:** {url}\n"
-                            f"🎯 Skynda att köp innan den tar slut igen!"
+                            name=name,
+                            url=product_link or url,
+                            price=price,
+                            status="Tillbaka i lager",
+                            site_name=site.get("name", url)
                         )
+
                     elif not in_stock and was_available:
                         print(f"  Produkten finns inte längre i lager, tas bort.", flush=True)
                         del available_products[product_hash]
