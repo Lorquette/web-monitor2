@@ -2,14 +2,14 @@
   {
     "name": "Mystery Shack",
     "url": "https://mysteryshack.se/products/pokemon",
-    "base_url": "https://mysteryshack.se",                  <-- Lägg till denna
+    "base_url": "https://mysteryshack.se",
     "product_selector": "section.s-productsort-list > div.product",
     "name_selector": "h3.text-base > a.productlist-title",
-    "price_selector": "span.product-price",                  <-- Rätt selektor här
+    "price_selector": "span.product-price",
     "availability_in_stock_selector": "div.product-tools",
     "availability_out_of_stock_selector": "div.text-base.text-center",
     "availability_out_of_stock_text": "slutsåld",
-    "product_link_selector": "div.product-image > a",         <-- ändrad till denna selektor för länken
+    "product_link_selector": "div.product-image > a",
     "buy_button_selector": "form.qs-cart button.qs-cart-submit",
     "check_product_page_if_not_released": true,
     "not_released_selector": "div.text-base:has-text('Slutsåld')"
