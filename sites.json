@@ -1,15 +1,14 @@
-
 [
   {
-    "name": "Webhallen Pokémon",
-    "url": "https://www.webhallen.com/se/category/4661-Pokmon?sortBy=latest",
-    "product_selector": ".panel-thin.product-grid-item",
-    "name_selector": ".product-list-item-title a",
-    "availability_selector": "#web_stock span.pull-left",
-    "availability_in_stock": ["i lager", "in stock", "förboka"],
+    "name": "Mystery Shack",
+    "url": "https://mysteryshack.se/products/pokemon",
+    "product_selector": "section.s-productsort-list > div.product",
+    "name_selector": "h3.text-base > a.productlist-title",
+    "availability_selector": "div.product-tools span.text-success-darker",
+    "availability_in_stock": ["i lager", "in stock", "available"],
+    "product_link_selector": "h3.text-base > a.productlist-title",
+    "buy_button_selector": "form.qs-cart button.qs-cart-submit",
     "check_product_page_if_not_released": true,
-    "not_released_selector": ".stock-icon-notreleased",
-    "product_link_selector": ".product-list-item-title a",
-    "buy_button_selector": "button.buy-button, button.add-to-cart-button"
+    "not_released_selector": "div.text-base:has-text('Slutsåld')"
   }
 ]
