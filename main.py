@@ -131,11 +131,6 @@ def scrape_site(site, seen_products, available_products):
     availability_selector = site.get("availability_selector")  # Behåll för fallback, men används ej längre
     availability_in_stock = site.get("availability_in_stock", ["i lager", "in stock", "available"])
     
-    if product_href and not product_href.startswith("http"):
-        product_link = base_url.rstrip("/") + "/" + product_href.lstrip("/")
-    else:
-        product_link = product_href or url
-    
     if "url_pattern" in site:
         urls_to_scrape = [site["url_pattern"].format(page=p) for p in range(site.get("start_page", 1), site.get("start_page", 1) + site.get("max_pages", 1))]
     elif "url" in site:
