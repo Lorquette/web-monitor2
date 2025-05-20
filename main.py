@@ -224,10 +224,12 @@ def scrape_site(site, seen_products, available_products):
                     availability_status = get_availability_status(product_elem, site)
                     print(f"  Tillgänglighet: {availability_status}", flush=True)
 
-                    if not product_matches_keywords(name):
+                    skip_keywords = site.get("skip_keywords", False)
+                    
+                    if not skip_keywords and not product_matches_keywords(name):
                         print(f"  Hoppar över produkten då den inte matchar nyckelord.", flush=True)
                         continue
-
+                        
                     product_hash = hash_string(name)
 
                     if product_hash not in seen_products:
