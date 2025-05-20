@@ -45,6 +45,33 @@ def send_discord_message(message):
 def product_matches_keywords(name):
     return any(re.search(keyword, name, re.IGNORECASE) for keyword in KEYWORDS)
 
+def get_availability_status(product_elem, site):
+    # Kolla "i lager" via selector
+    in_stock_selector = site.get("availability_in_stock_selector")
+    if in_stock_selector:
+        try:
+            if product_elem.locator(in_stock_selector).count() > 0:
+                return "i lager"
+        except Exception:
+            pass
+
+    # Kolla "slutsåld" via selector + text
+    out_of_stock_selector = site.get("availability_out_of_stock_selector")
+    out_of_stock_text = site.get("availability_out_of_stock_text", "").lower()
+
+    if out_of_stock_selector:
+        try:
+            elems = product_elem.locator(out_of_stock_selector)
+            count = elems.count()
+            for i in range(count):
+                text = elems.nth(i).inner_text().strip().lower()
+                if out_of_stock_text in text:
+                    return "slutsåld"
+        except Exception:
+            pass
+
+    return "okänd"
+
 def scroll_to_load_all(page, product_selector):
     start = time.time()
     print(f"Scroll-funktionen startar vid {start:.2f} sek", flush=True)
@@ -85,7 +112,7 @@ def scroll_to_load_all(page, product_selector):
 def scrape_site(site, seen_products, available_products):
     product_selector = site["product_selector"]
     name_selector = site["name_selector"]
-    availability_selector = site["availability_selector"]
+    availability_selector = site.get("availability_selector")  # Behåll för fallback, men används ej längre
     availability_in_stock = site.get("availability_in_stock", ["i lager", "in stock", "available"])
 
     if "url_pattern" in site:
@@ -152,12 +179,8 @@ def scrape_site(site, seen_products, available_products):
                     name = product_elem.locator(name_selector).text_content(timeout=2000).strip()
                     print(f"Produkt {i+1}/{count}: {name}", flush=True)
 
-                    availability_text = ""
-                    try:
-                        availability_text = product_elem.locator(availability_selector).first.inner_text().strip().lower()
-                    except Exception:
-                        pass
-                    print(f"  Tillgänglighetstext: '{availability_text}'", flush=True)
+                    availability_status = get_availability_status(product_elem, site)
+                    print(f"  Tillgänglighet: {availability_status}", flush=True)
 
                     if not product_matches_keywords(name):
                         print(f"  Hoppar över produkten då den inte matchar nyckelord.", flush=True)
@@ -202,7 +225,7 @@ def scrape_site(site, seen_products, available_products):
                         else:
                             in_stock = False
                     else:
-                        in_stock = any(keyword in availability_text for keyword in availability_in_stock)
+                        in_stock = (availability_status == "i lager")
                     print(f"  I lager (eller preorderbar): {in_stock}", flush=True)
 
                     was_available = product_hash in available_products
