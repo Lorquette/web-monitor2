@@ -132,17 +132,21 @@ def scrape_site(site, seen_products, available_products):
                                            "AppleWebKit/537.36 (KHTML, like Gecko) "
                                            "Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.43")
 
+        product_page = browser.new_page(user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                                           "AppleWebKit/537.36 (KHTML, like Gecko) "
+                                           "Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.43")
+        
         def check_if_preorderable(product_url):
             print(f"Startar preorder-check: {product_url}", flush=True)
             start_pre = time.time()
             try:
-                page.goto(product_url, timeout=5000, wait_until="domcontentloaded")
+                product_page.goto(product_url, timeout=5000, wait_until="domcontentloaded")
                 print(f"Sida laddad på {time.time()-start_pre:.2f} sek", flush=True)
-
-                count = page.locator(site["buy_button_selector"]).count()
+        
+                count = product_page.locator(site["buy_button_selector"]).count()
                 print(f"Antal buy-buttons: {count}", flush=True)
                 return count > 0
-
+        
             except Exception as e:
                 print(f"Fel vid kontroll av förbeställning på {product_url}: {e}", flush=True)
                 return False
@@ -249,7 +253,8 @@ def scrape_site(site, seen_products, available_products):
                     print(f"Fel vid hantering av produkt {i} på {url}: {e}", flush=True)
                 finally:
                     print(f"  Hantering av produkt {i+1} klar på {time.time()-product_start:.2f} sek", flush=True)
-
+       
+        product_page.close()
         browser.close()
 
     return new_seen or new_available
