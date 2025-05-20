@@ -2,6 +2,7 @@
   {
     "name": "Mystery Shack",
     "url": "https://mysteryshack.se/products/pokemon",
+    "skip_keywords": true,
     "base_url": "https://mysteryshack.se",
     "product_selector": "section.s-productsort-list > div.product",
     "name_selector": "h3.text-base > a.productlist-title",
