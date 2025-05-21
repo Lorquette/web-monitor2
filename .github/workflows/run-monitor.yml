@@ -5,8 +5,6 @@ permissions:
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '*/5 * * * *'  # Var 5:e minut
 
 jobs:
   monitor:
