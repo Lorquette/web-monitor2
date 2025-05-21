@@ -12,7 +12,7 @@
     "availability_out_of_stock_text": "slutsåld",
     "product_link_selector": "div.product-image > a",
     "buy_button_selector": "form.qs-cart button.qs-cart-submit",
-    "check_product_page_if_not_released": true,
-    "not_released_selector": "div.text-base:has-text('Slutsåld')"
+    "check_product_page_if_not_released": false,
+    "not_released_selector": ""
   }
 ]
