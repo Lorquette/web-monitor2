@@ -62,19 +62,22 @@ def product_matches_keywords(name):
     return any(re.search(keyword, name, re.IGNORECASE) for keyword in KEYWORDS)
 
 def get_availability_status(product_elem, site):
-    # Kolla "i lager" via selector
+    # Kolla "i lager" via selector + text
     in_stock_selector = site.get("availability_in_stock_selector")
     if in_stock_selector:
         try:
-            if product_elem.locator(in_stock_selector).count() > 0:
-                return "i lager"
-        except Exception:
-            pass
+            elems = product_elem.locator(in_stock_selector)
+            count = elems.count()
+            for i in range(count):
+                text = elems.nth(i).inner_text().strip().lower()
+                if "i lager" in text or "available" in text or "in stock" in text:
+                    return "i lager"
+        except Exception as e:
+            print(f"  Fel vid in_stock_selector: {e}", flush=True)
 
     # Kolla "slutsåld" via selector + text
     out_of_stock_selector = site.get("availability_out_of_stock_selector")
     out_of_stock_text = site.get("availability_out_of_stock_text", "").lower()
-
     if out_of_stock_selector:
         try:
             elems = product_elem.locator(out_of_stock_selector)
@@ -83,8 +86,8 @@ def get_availability_status(product_elem, site):
                 text = elems.nth(i).inner_text().strip().lower()
                 if out_of_stock_text in text:
                     return "slutsåld"
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"  Fel vid out_of_stock_selector: {e}", flush=True)
 
     return "okänd"
 
@@ -129,7 +132,6 @@ def scrape_site(site, seen_products, available_products):
     product_selector = site["product_selector"]
     name_selector = site["name_selector"]
     availability_selector = site.get("availability_selector")  # Behåll för fallback, men används ej längre
-    availability_in_stock = site.get("availability_in_stock", ["i lager", "in stock", "available"])
     
     if "url_pattern" in site:
         urls_to_scrape = [site["url_pattern"].format(page=p) for p in range(site.get("start_page", 1), site.get("start_page", 1) + site.get("max_pages", 1))]
