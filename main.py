@@ -185,10 +185,13 @@ def scrape_site(site, seen_products, available_products):
                 print(f"Kunde inte ladda {url}: {e}", flush=True)
                 continue
 
-            print("Startar scrollning för att ladda produkter...", flush=True)
-            scroll_start = time.time()
-            scroll_to_load_all(page, product_selector)
-            print(f"Scrollning klar efter {time.time()-scroll_start:.2f} sek", flush=True)
+            if site.get("use_scroll", True):
+                print("Startar scrollning för att ladda produkter...", flush=True)
+                scroll_start = time.time()
+                scroll_to_load_all(page, product_selector)
+                print(f"Scrollning klar efter {time.time()-scroll_start:.2f} sek", flush=True)
+            else:
+                print("Scrollning avaktiverad enligt konfiguration.", flush=True)
 
             products = page.locator(product_selector)
             try:
