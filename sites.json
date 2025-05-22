@@ -23,7 +23,7 @@
     ],
     "skip_keywords": true,
     "base_url": "https://www.worldofboardgames.com/",
-    "product_selector": "tr[class^='z']",
+    "product_selector": "div.center > div > ul > li:nth-child(3) > ul > li.li48 > ul > li:nth-child(4) > div > table > tbody > tr[class^='z']",
     "name_selector": "td:nth-child(1) a",
     "price_selector": "td:nth-child(6)",
     "preorder_selector": "a.button.blue.buttonshadow",
