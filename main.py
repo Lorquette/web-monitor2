@@ -137,6 +137,8 @@ def scrape_site(site, seen_products, available_products):
         urls_to_scrape = [site["url_pattern"].format(page=p) for p in range(site.get("start_page", 1), site.get("start_page", 1) + site.get("max_pages", 1))]
     elif "url" in site:
         urls_to_scrape = [site["url"]]
+    elif "urls" in site:
+        urls_to_scrape = site["urls"]
     else:
         print("Ingen giltig URL-konfiguration för siten.", flush=True)
         return False
