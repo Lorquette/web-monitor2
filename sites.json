@@ -31,6 +31,7 @@
     "name_selector": "div.medium a",
     "price_selector": "div.xlarge strong",
     "preorder_selector": "a.button.blue.buttonshadow",
+    "availability_selector": "a.button.green.buttonshadow, a.button.yellow.buttonshadow, a.button.blue.buttonshadow",
     "availability_in_stock_selector": "a.button.green.buttonshadow, a.button.yellow.buttonshadow",
     "availability_out_of_stock_selector": "a.button.red.buttonshadow",
     "availability_out_of_stock_text": "Tillfälligt slut",
