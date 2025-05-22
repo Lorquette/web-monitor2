@@ -18,8 +18,8 @@
   {
     "name": "World of Board Games",
     "urls": [
-    "https://www.worldofboardgames.com/kortspel/pokemon_tcg/nya_produkter#kategori",
-    "https://www.worldofboardgames.com/kortspel/pokemon_tcg/nya_produkter/100#kategori"
+    "https://www.worldofboardgames.com/kortspel/pokemon_tcg/nya_produkter",
+    "https://www.worldofboardgames.com/kortspel/pokemon_tcg/nya_produkter/100"
     ],
     "skip_keywords": true,
     "base_url": "https://www.worldofboardgames.com/",
@@ -33,6 +33,7 @@
     "product_link_selector": "td:nth-child(1) a",
     "buy_button_selector": "",
     "check_product_page_if_not_released": false,
-    "not_released_selector": ""
+    "not_released_selector": "",
+    "use_scroll": false
   }
 ]
