@@ -11,7 +11,27 @@
     "availability_out_of_stock_selector": "div.text-base.text-center",
     "availability_out_of_stock_text": "slutsåld",
     "product_link_selector": "div.product-image > a",
-    "buy_button_selector": "form.qs-cart button.qs-cart-submit",
+    "buy_button_selector": "",
+    "check_product_page_if_not_released": false,
+    "not_released_selector": ""
+  },
+  {
+    "name": "World of Board Games",
+    "urls": [
+    "https://www.worldofboardgames.com/kortspel/pokemon_tcg/nya_produkter#kategori",
+    "https://www.worldofboardgames.com/kortspel/pokemon_tcg/nya_produkter/100#kategori"
+    ],
+    "skip_keywords": true,
+    "base_url": "https://www.worldofboardgames.com/",
+    "product_selector": "tr[class^='z']",
+    "name_selector": "td:nth-child(1) a",
+    "price_selector": "td:nth-child(6)",
+    "preorder_selector": "a.button.blue.buttonshadow",
+    "availability_in_stock_selector": "a.button.green.buttonshadow, a.button.yellow.buttonshadow",
+    "availability_out_of_stock_selector": "a.button.red.buttonshadow",
+    "availability_out_of_stock_text": "Tillfälligt slut",
+    "product_link_selector": "td:nth-child(1) a",
+    "buy_button_selector": "",
     "check_product_page_if_not_released": false,
     "not_released_selector": ""
   }
