@@ -53,6 +53,10 @@ def send_discord_message(name, url, price, status, site_name):
         "footer": {"text": "Skynda att köpa innan den tar slut!"}
     }
 
+    payload = {
+        "embeds": [embed]
+    }
+    
     try:
         response = requests.post(DISCORD_WEBHOOK, json=payload)
         if response.status_code != 204:
