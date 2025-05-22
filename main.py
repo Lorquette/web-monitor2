@@ -35,10 +35,16 @@ def send_discord_message(name, url, price, status, site_name):
         print("No Discord webhook set in environment variable.", flush=True)
         return
     
+    color_map = {
+        "Ny produkt": 0x00FF00,           # Grön
+        "Tillbaka i lager": 0xFFFF00,     # Gul
+        "Förbeställningsbar": 0x1E90FF    # Blå
+    }
+
     embed = {
         "title": name,
         "url": url,
-        "color": 0x00FF00 if status == "Ny produkt" else 0xFFFF00,
+        "color": color_map.get(status, 0x000000),  # Svart fallback
         "fields": [
             {"name": "Pris", "value": price or "Okänt", "inline": True},
             {"name": "Status", "value": status, "inline": True},
@@ -46,11 +52,7 @@ def send_discord_message(name, url, price, status, site_name):
         ],
         "footer": {"text": "Skynda att köpa innan den tar slut!"}
     }
-    
-    payload = {
-        "embeds": [embed]
-    }
-    
+
     try:
         response = requests.post(DISCORD_WEBHOOK, json=payload)
         if response.status_code != 204:
@@ -248,45 +250,67 @@ def scrape_site(site, seen_products, available_products):
                             site_name=site.get("name", url)
                         )
                         
-                    is_not_released = False
-                    if site.get("check_product_page_if_not_released", False):
+                    # Börja med att kolla om blå knapp finns (preorderknapp)
+                    preorder_selector = site.get("preorder_selector")
+                    has_preorder_button = False
+                    if preorder_selector:
                         try:
-                            not_released_elem = product_elem.locator(site["not_released_selector"])
-                            is_not_released = not_released_elem.count() > 0
+                            preorder_elem = product_elem.locator(preorder_selector)
+                            has_preorder_button = preorder_elem.count() > 0
                         except Exception:
-                            is_not_released = False
-                    print(f"  Är produkten inte släppt än? {is_not_released}", flush=True)
-
-                    if is_not_released:
-                        product_link = None
-                        try:
-                            product_link = product_elem.locator(site["product_link_selector"]).get_attribute("href")
-                            if product_link and product_link.startswith("/"):
-                                base_url = re.match(r"(https?://[^/]+)", url).group(1)
-                                product_link = base_url + product_link
-                        except Exception:
-                            pass
-                        print(f"  Produktlänk: {product_link}", flush=True)
-
-                        if product_link:
-                            in_stock = check_if_preorderable(product_link)
-                        else:
-                            in_stock = False
+                            has_preorder_button = False
+                    
+                    if has_preorder_button:
+                        in_stock = True
+                        preorder = True
+                        print(f"  Produkten är preorderbar via blå knapp.", flush=True)
                     else:
-                        in_stock = (availability_status == "i lager")
+                        preorder = False
+                        is_not_released = False
+                        if site.get("check_product_page_if_not_released", False):
+                            try:
+                                not_released_elem = product_elem.locator(site["not_released_selector"])
+                                is_not_released = not_released_elem.count() > 0
+                            except Exception:
+                                is_not_released = False
+                        print(f"  Är produkten inte släppt än? {is_not_released}", flush=True)
+                    
+                        if is_not_released:
+                            product_link = None
+                            try:
+                                product_link = product_elem.locator(site["product_link_selector"]).get_attribute("href")
+                                if product_link and product_link.startswith("/"):
+                                    base_url = re.match(r"(https?://[^/]+)", url).group(1)
+                                    product_link = base_url + product_link
+                            except Exception:
+                                pass
+                            print(f"  Produktlänk: {product_link}", flush=True)
+                    
+                            if product_link:
+                                in_stock = check_if_preorderable(product_link)
+                            else:
+                                in_stock = False
+                        else:
+                            in_stock = (availability_status == "i lager")
+                    
                     print(f"  I lager (eller preorderbar): {in_stock}", flush=True)
 
                     was_available = product_hash in available_products
 
                     if in_stock and not was_available:
-                        print(f"  Produkten är tillbaka i lager!", flush=True)
+                        if preorder:
+                            status_msg = "Förbeställningsbar"
+                        else:
+                            status_msg = "Tillbaka i lager"
+                    
+                        print(f"  Produkten är {status_msg.lower()}!", flush=True)
                         available_products[product_hash] = name
                         new_available = True
                         send_discord_message(
                             name=name,
                             url=product_link or url,
                             price=price,
-                            status="Tillbaka i lager",
+                            status=status_msg,
                             site_name=site.get("name", url)
                         )
 
