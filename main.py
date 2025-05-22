@@ -76,7 +76,7 @@ def get_availability_status(product_elem, site):
             count = elems.count()
             for i in range(count):
                 text = elems.nth(i).inner_text().strip().lower()
-                if "i lager" in text or "available" in text or "in stock" in text:
+                if "i lager" in text or "available" in text or "in stock" in text or "Köp" in text or "Boka" in text:
                     return "i lager"
         except Exception as e:
             print(f"  Fel vid in_stock_selector: {e}", flush=True)
