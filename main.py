@@ -143,6 +143,14 @@ def scrape_site(site, seen_products, available_products):
     
     if "url_pattern" in site:
         urls_to_scrape = [site["url_pattern"].format(page=p) for p in range(site.get("start_page", 1), site.get("start_page", 1) + site.get("max_pages", 1))]
+    elif "url_pattern_complex" in site:
+        url_lv1_list = site.get("url_pattern_lv1", [""])
+        urls_to_scrape = []
+
+        for lv1 in url_lv1_list:
+            for p in range(site.get("start_page", 1), site.get("start_page", 1) + site.get("max_pages", 1)):
+                url = site["url_pattern"].format(url_pattern_lv1=lv1, page=p)
+                urls_to_scrape.append(url)  
     elif "url" in site:
         urls_to_scrape = [site["url"]]
     elif "urls" in site:
