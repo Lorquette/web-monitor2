@@ -71,6 +71,8 @@ def product_matches_keywords(name):
 
 def get_availability_status(product_elem, site):
     # Kolla "i lager" via selector + text
+    if site.get("availability_status") is True:
+        return "i lager"
     in_stock_selector = site.get("availability_in_stock_selector")
     if in_stock_selector:
         try:
@@ -149,7 +151,7 @@ def scrape_site(site, seen_products, available_products):
 
         for lv1 in url_lv1_list:
             for p in range(site.get("start_page", 1), site.get("start_page", 1) + site.get("max_pages", 1)):
-                url = site["url_pattern"].format(url_pattern_lv1=lv1, page=p)
+                url = site["url_pattern_complex"].format(url_pattern_lv1=lv1, page=p)
                 urls_to_scrape.append(url)  
     elif "url" in site:
         urls_to_scrape = [site["url"]]
@@ -224,7 +226,7 @@ def scrape_site(site, seen_products, available_products):
                     price_selector = site.get("price_selector")
                     if price_selector:
                         try:
-                            price = product_elem.locator(price_selector).text_content(timeout=2000).strip()
+                            price = product_elem.locator(price_selector).text_content(timeout=500).strip()
                         except Exception:
                             price = None
                 
@@ -241,7 +243,7 @@ def scrape_site(site, seen_products, available_products):
                     else:
                         product_link = product_href or url
                     
-                    name = product_elem.locator(name_selector).text_content(timeout=2000).strip()
+                    name = product_elem.locator(name_selector).text_content(timeout=500).strip()
                     print(f"Produkt {i+1}/{count}: {name}", flush=True)
 
                     availability_status = get_availability_status(product_elem, site)
@@ -407,7 +409,7 @@ def main():
     any_changes = False
 
     for site in sites:
-        print(f"Skannar: {site.get('name') or site.get('url') or site.get('url_pattern') or 'Okänd site'}", flush=True)
+        print(f"Skannar: {site.get('name') or site.get('url') or site.get('url_pattern') or site.get('url_pattern_complex') or 'Okänd site'}", flush=True)
         changed = scrape_site(site, seen_products, available_products)
         any_changes = any_changes or changed
 
