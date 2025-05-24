@@ -40,5 +40,36 @@
     "check_product_page_if_not_released": false,
     "not_released_selector": "",
     "use_scroll": false
-  }
+  },
+  {
+  "name": "Samlarhobby",
+  "url_pattern_complex": "https://www.samlarhobby.se/collections/{url_pattern_lv1}?filter.v.availability=1&page={page}&sort_by=created-descending",
+  "url_pattern_lv1": [
+    "pokemon",
+    "tins",
+    "losa-boosters",
+    "collection-boxar",
+    "blisterpacks",
+    "3-pack-blisters",
+    "checklanes",
+    "elite-trainer-boxar",
+    "booster-boxar"
+  ],
+  "start_page": 1,
+  "max_pages": 5,
+  "skip_keywords": true,
+  "base_url": "https://www.samlarhobby.se",
+  "product_selector": "div.grid__item",
+  "name_selector": "div.card__content h3 a",
+  "price_selector": "div.price span.price-item--regular",
+  "availability_selector": "",
+  "availability_in_stock_selector": "",
+  "availability_out_of_stock_selector": "",
+  "availability_out_of_stock_text": "",
+  "product_link_selector": "div.card__content h3 a",
+  "buy_button_selector": "",
+  "check_product_page_if_not_released": false,
+  "not_released_selector": "",
+  "use_scroll": false
+}
 ]
