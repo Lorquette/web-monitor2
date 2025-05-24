@@ -60,7 +60,7 @@
   "skip_keywords": true,
   "base_url": "https://www.samlarhobby.se",
   "product_selector": "li.grid__item",
-  "name_selector": "h3.card__heading a.full-unstyled-link",
+  "name_selector": "h3.card__heading.h5 a.full-unstyled-link",
   "price_selector": "div.price__regular span.price-item--regular",
   "availability_selector": "",
   "availability_in_stock_selector": "",
