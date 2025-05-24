@@ -70,6 +70,7 @@
   "buy_button_selector": "",
   "check_product_page_if_not_released": false,
   "not_released_selector": "",
-  "use_scroll": false
+  "use_scroll": false,
+  "availability_status": true
 }
 ]
