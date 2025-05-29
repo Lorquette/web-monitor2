@@ -304,14 +304,13 @@ def scrape_site(site, seen_products, available_products):
                                 if product_link and product_link.startswith("/"):
                                     base_url = re.match(r"(https?://[^/]+)", url).group(1)
                                     product_link = base_url + product_link
-                                
-                                product_link = clean_product_link(product_link)
 
                             except Exception:
                                 pass
                             print(f"  Produktlänk: {product_link}", flush=True)
                     
                             if product_link:
+                                product_link = clean_product_link(product_link)
                                 in_stock = check_if_preorderable(product_link)
                             else:
                                 in_stock = False
