@@ -66,7 +66,7 @@
   "availability_in_stock_selector": "",
   "availability_out_of_stock_selector": "",
   "availability_out_of_stock_text": "",
-  "product_link_selector": "h3.card__heading a.full-unstyled-link",
+  "product_link_selector": "h3.card__heading.h5 a.full-unstyled-link",
   "buy_button_selector": "",
   "check_product_page_if_not_released": false,
   "not_released_selector": "",
