@@ -210,6 +210,20 @@ def scrape_site(site, seen_products, available_products):
             else:
                 print("Scrollning avaktiverad enligt konfiguration.", flush=True)
 
+            no_products_selector = site.get("no_products_selector")
+            no_products_text = site.get("no_products_text")
+            
+            if no_products_selector and no_products_text:
+                try:
+                    elems = page.locator(no_products_selector)
+                    if elems.count() > 0:
+                        text = elems.first.text_content(timeout=1000).strip()
+                        if no_products_text in text:
+                            print(f"Inga produkter funna på {url} enligt '{no_products_selector}' meddelande.", flush=True)
+                            continue  # Hoppa till nästa URL
+                except Exception as e:
+                    print(f"Fel vid kontroll av 'inga produkter' meddelande: {e}", flush=True)
+                    
             products = page.locator(product_selector)
             try:
                 count = products.count()
