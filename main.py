@@ -324,6 +324,7 @@ def scrape_site(site, seen_products, available_products):
                     
                         print(f"  Produkten är {status_msg.lower()}!", flush=True)
                         available_products[product_hash] = name
+                        seen_products[product_hash] = name
                         new_available = True
                         send_discord_message(
                             name=name,
