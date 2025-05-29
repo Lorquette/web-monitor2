@@ -89,6 +89,8 @@
   "buy_button_selector": "form[action='/cart/add'] input[type='submit']",
   "check_product_page_if_not_released": false,
   "not_released_selector": "",
-  "use_scroll": false
+  "use_scroll": false,
+  "no_products_selector": "div.grid-item > p",
+  "no_products_text": "Tyvärr, det finns inga produkter som matchar din sökning."
 }
 ]
