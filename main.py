@@ -104,7 +104,14 @@ def get_availability_status(product_elem, site):
                     return "slutsåld"
         except Exception as e:
             print(f"  Fel vid out_of_stock_selector: {e}", flush=True)
-
+    
+        try:
+            count = product_elem.locator(out_of_stock_selector).count()
+            if count == 0 and site.get("treat_missing_out_of_stock_as_in_stock") is True:
+                return "i lager"
+        except Exception as e:
+            print(f"  Fel vid kontroll av frånvaro av slutsåld-element: {e}", flush=True)
+    
     return "okänd"
 
 def scroll_to_load_all(page, product_selector):
