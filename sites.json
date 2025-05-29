@@ -91,6 +91,7 @@
   "not_released_selector": "",
   "use_scroll": false,
   "no_products_selector": "div.grid-item > p",
-  "no_products_text": "Tyvärr, det finns inga produkter som matchar din sökning."
+  "no_products_text": "Tyvärr, det finns inga produkter som matchar din sökning.",
+  "treat_missing_out_of_stock_as_in_stock": true
 }
 ]
