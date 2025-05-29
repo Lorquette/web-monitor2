@@ -11,6 +11,7 @@ SEEN_PRODUCTS_FILE = os.path.join(DATA_DIR, "seen_products.json")
 AVAILABLE_PRODUCTS_FILE = os.path.join(DATA_DIR, "available_products.json")
 SITES_FILE = "sites.json"
 DISCORD_WEBHOOK = os.getenv("DISCORD_WEBHOOK")
+USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.43"
 
 KEYWORDS = [
     "Pokémon", "Pokemon", "Destined Rivals", "Prismatic Evolutions", "Journey Together", "Palafin"
@@ -166,13 +167,8 @@ def scrape_site(site, seen_products, available_products):
 
     with sync_playwright() as p:
         browser = p.chromium.launch()
-        page = browser.new_page(user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                                           "AppleWebKit/537.36 (KHTML, like Gecko) "
-                                           "Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.43")
-
-        product_page = browser.new_page(user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                                           "AppleWebKit/537.36 (KHTML, like Gecko) "
-                                           "Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.43")
+        page = browser.new_page(user_agent=USER_AGENT)
+        product_page = browser.new_page(user_agent=USER_AGENT)
         
         def check_if_preorderable(product_url):
             print(f"Startar preorder-check: {product_url}", flush=True)
