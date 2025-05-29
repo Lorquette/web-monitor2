@@ -72,5 +72,22 @@
   "not_released_selector": "",
   "use_scroll": false,
   "availability_status": true
+},
+  {
+  "name": "Röda Goblinen",
+  "url_pattern": "https://www.goblinen.com/collections/pokemon?page={page}",
+  "start_page": 1,
+  "max_pages": 10,
+  "base_url": "https://www.goblinen.com",
+  "product_selector": "div.grid__item",
+  "name_selector": "div.card__content h3.card__heading a.full-unstyled-link",
+  "price_selector": "div.card__content div.price span.price-item",
+  "availability_out_of_stock_selector": "div.badge--sold-out",
+  "availability_out_of_stock_text": "Slutsåld",
+  "product_link_selector": "div.card__content h3.card__heading a.full-unstyled-link",
+  "buy_button_selector": "",
+  "check_product_page_if_not_released": false,
+  "not_released_selector": "",
+  "use_scroll": false
 }
 ]
