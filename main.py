@@ -5,6 +5,7 @@ from playwright.sync_api import sync_playwright
 import re
 import time
 import requests
+from urllib.parse import urlparse, urlunparse
 
 DATA_DIR = "data"
 SEEN_PRODUCTS_FILE = os.path.join(DATA_DIR, "seen_products.json")
@@ -30,6 +31,10 @@ def save_json(file_path, data):
 
 def hash_string(s):
     return hashlib.sha256(s.encode("utf-8")).hexdigest()
+
+def clean_product_link(url):
+    parsed = urlparse(url)
+    return urlunparse((parsed.scheme, parsed.netloc, parsed.path, '', '', ''))
 
 def send_discord_message(name, url, price, status, site_name):
     if not DISCORD_WEBHOOK:
@@ -235,10 +240,12 @@ def scrape_site(site, seen_products, available_products):
                         product_href = None
 
                     if product_href and not product_href.startswith("http"):
-                        product_link = base_url.rstrip("/") + "/" + product_href.lstrip("/")
+                        full_url = base_url.rstrip("/") + "/" + product_href.lstrip("/")
                     else:
-                        product_link = product_href or url
+                        full_url = product_href or url
                     
+                    product_link = clean_product_link(full_url)
+
                     name = product_elem.locator(name_selector).text_content(timeout=500).strip()
                     print(f"Produkt {i+1}/{count}: {name}", flush=True)
 
@@ -297,6 +304,9 @@ def scrape_site(site, seen_products, available_products):
                                 if product_link and product_link.startswith("/"):
                                     base_url = re.match(r"(https?://[^/]+)", url).group(1)
                                     product_link = base_url + product_link
+                                
+                                product_link = clean_product_link(product_link)
+
                             except Exception:
                                 pass
                             print(f"  Produktlänk: {product_link}", flush=True)
