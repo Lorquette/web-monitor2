@@ -258,7 +258,7 @@ def scrape_site(site, seen_products, available_products):
                         print(f"  Hoppar över produkten då den inte matchar nyckelord.", flush=True)
                         continue
                         
-                    product_hash = hash_string(name)
+                    product_hash = hash_string(f"{name}|{product_link}")
 
                     if product_hash not in seen_products:
                         print(f"  Ny produkt upptäckt!", flush=True)
