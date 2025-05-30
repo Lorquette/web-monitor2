@@ -80,7 +80,7 @@
   "name": "Röda Goblinen",
   "url_pattern": "https://www.goblinen.com/collections/pokemon?page={page}",
   "start_page": 1,
-  "max_pages": 10,
+  "max_pages": 8,
   "skip_keywords": true,
   "base_url": "https://www.goblinen.com",
   "product_selector": "div.grid-uniform > div.grid-item",
@@ -96,5 +96,24 @@
   "no_products_selector": "div.grid-item > p",
   "no_products_text": "Tyvärr, det finns inga produkter som matchar din sökning.",
   "treat_missing_out_of_stock_as_in_stock": true
+},
+  {
+  "name": "Playoteket",
+  "url_pattern": "https://playoteket.com/80-pokemon?page={page}",
+  "start_page": 1,
+  "max_pages": 8,
+  "base_url": "https://playoteket.com",
+  "product_selector": "div.thumbnail-container",
+  "product_link_selector": "a.thumbnail.product-thumbnail",
+  "name_selector": "h2.product-title > a", 
+  "price_selector": "div.product-price-and-shipping span.price",
+  "availability_in_stock_selector": "span.badge-success",
+  "availability_out_of_stock_selector": "li.product-flag.out_of_stock, span.badge-danger.product-unavailable:not(.product-unavailable-allow-oosp)",
+  "preorder_selector": "li.product-flag.new",
+  "check_product_page_if_not_released": true,
+  "not_released_selector": "span.badge-danger.product-unavailable-allow-oosp",
+  "buy_button_selector": "button.add-to-cart:not([disabled])",
+  "use_scroll": false,
+  "skip_keywords": true
 }
 ]
