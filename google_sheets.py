@@ -2,6 +2,8 @@ import os
 import json
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
+from datetime import datetime
+
 
 # Läs in JSON-credentials från secret
 SERVICE_ACCOUNT_INFO = os.getenv("GOOGLE_SHEETS_CREDS")
@@ -20,14 +22,14 @@ SPREADSHEET_ID = os.getenv("GOOGLE_SHEETS_ID")
 if not SPREADSHEET_ID:
     raise Exception("Miljövariabeln GOOGLE_SHEETS_ID är inte satt")
 
-SHEET_NAME = 'Sheet1'  # Ändra till ditt ark-namn om det behövs
+SHEET_NAME = 'Blad1'  # Ändra till ditt ark-namn om det behövs
 
 def get_all_hashes():
     """
-    Läser in alla hashar från kolumn A i Google Sheets och returnerar som lista.
+    Läser in alla hashar från kolumn G i Google Sheets och returnerar som lista.
     """
     sheet = service.spreadsheets()
-    range_ = f'{SHEET_NAME}!A2:A'  # Anta att första raden är header, börja på rad 2
+    range_ = f'{SHEET_NAME}!G2:G'  # Anta att första raden är header, börja på rad 2
     result = sheet.values().get(spreadsheetId=SPREADSHEET_ID, range=range_).execute()
     values = result.get('values', [])
     hashes = [row[0] for row in values if row]  # Säkerställ att raden inte är tom
@@ -78,15 +80,17 @@ def update_or_append_row(product_data):
     if not product_hash:
         raise ValueError("product_data måste innehålla 'hash'")
 
+    now_str = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
     # Mappa product_data till rad som lista med rätt ordning i Sheets
     # EXEMPEL: (du behöver justera efter din kolumnordning)
     row_data = [
-        product_data.get('hash', ''),
         product_data.get('product_name', ''),
         product_data.get('price', ''),
-        product_data.get('url', ''),
         product_data.get('store', ''),
         product_data.get('status', ''),
+        product_data.get('url', ''),
+        now_str,
+        product_hash,
         # Lägg till fler fält efter behov
     ]
 
