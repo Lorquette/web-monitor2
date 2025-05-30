@@ -23,9 +23,12 @@
     "https://www.worldofboardgames.com/kortspel/pokemon_tcg/nya_produkter/80",
     "https://www.worldofboardgames.com/kortspel/pokemon_tcg/nya_produkter/120",
     "https://www.worldofboardgames.com/kortspel/pokemon_tcg/nya_produkter/160",
-    "https://www.worldofboardgames.com/kortspel/pokemon_tcg/nya_produkter/200"
+    "https://www.worldofboardgames.com/kortspel/pokemon_tcg/nya_produkter/200",
+    "https://www.worldofboardgames.com/sallskapsspel/nya_produkter",
+    "https://www.worldofboardgames.com/sallskapsspel/nya_produkter/40",
+    "https://www.worldofboardgames.com/sallskapsspel/nya_produkter/80"
     ],
-    "skip_keywords": true,
+    "skip_keywords": false,
     "base_url": "https://www.worldofboardgames.com/",
     "product_selector": "li.productContainer",
     "name_selector": "div.medium a",
