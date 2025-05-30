@@ -70,7 +70,7 @@ def send_discord_message(name, url, price, status, site_name):
         response = requests.post(DISCORD_WEBHOOK, json=payload)
         if response.status_code != 204:
             print(f"Failed to send Discord message: {response.status_code} {response.text}", flush=True)
-        time.sleep(1)
+        time.sleep(1.5)
         
     except Exception as e:
         print(f"Exception while sending Discord message: {e}", flush=True)
