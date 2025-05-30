@@ -40,10 +40,10 @@ def send_discord_message(name, url, price, status, site_name):
     if not DISCORD_WEBHOOK:
         print("No Discord webhook set in environment variable.", flush=True)
         return
-    
+
     color_map = {
-        "Ny produkt": 0x00FF00,           # Grön
-        "Tillbaka i lager": 0xFFFF00,     # Gul
+        "Ny produkt": 0xFFFF00,           # Gul
+        "Tillbaka i lager": 0x00FF00,     # Grön
         "Förbeställningsbar": 0x1E90FF    # Blå
     }
 
