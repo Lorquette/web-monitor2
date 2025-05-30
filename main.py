@@ -6,7 +6,7 @@ import re
 import time
 import requests
 from urllib.parse import urlparse, urlunparse
-from google_sheets import append_row_to_sheet
+from google_sheets import append_row
 
 DATA_DIR = "data"
 SEEN_PRODUCTS_FILE = os.path.join(DATA_DIR, "seen_products.json")
