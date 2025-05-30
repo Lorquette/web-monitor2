@@ -296,7 +296,7 @@ def scrape_site(site, seen_products, available_products):
                             site_name=site.get("name", url)
                         )
                         if GOOGLE_SHEETS_CREDS and GOOGLE_SHEETS_ID:
-                            append_row_to_sheet(
+                            append_row(
                                 creds_json=GOOGLE_SHEETS_CREDS,
                                 sheet_id=GOOGLE_SHEETS_ID,
                                 row_data=[name, product_link or url, price, "Ny produkt", site.get("name", url)]
@@ -368,7 +368,7 @@ def scrape_site(site, seen_products, available_products):
                             site_name=site.get("name", url)
                         )
                         if GOOGLE_SHEETS_CREDS and GOOGLE_SHEETS_ID:
-                            append_row_to_sheet(
+                            append_row(
                                 creds_json=GOOGLE_SHEETS_CREDS,
                                 sheet_id=GOOGLE_SHEETS_ID,
                                 row_data=[name, product_link or url, price, status_msg, site.get("name", url)]
