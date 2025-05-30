@@ -296,11 +296,16 @@ def scrape_site(site, seen_products, available_products):
                             site_name=site.get("name", url)
                         )
                         if GOOGLE_SHEETS_CREDS and GOOGLE_SHEETS_ID:
-                            append_row(
-                                creds_json=GOOGLE_SHEETS_CREDS,
-                                sheet_id=GOOGLE_SHEETS_ID,
-                                row_data=[name, product_link or url, price, "Ny produkt", site.get("name", url)]
-                            )                  
+                            product_data = {
+                                'hash': product_hash,
+                                'product_name': name,
+                                'price': price,
+                                'url': product_link or url,
+                                'store': site.get("name", url),
+                                'status': "Ny produkt"
+                            }
+                            google_sheets.update_or_append_row(product_data)
+                                    
                     # Börja med att kolla om blå knapp finns (preorderknapp)
                     preorder_selector = site.get("preorder_selector")
                     has_preorder_button = False
@@ -368,11 +373,16 @@ def scrape_site(site, seen_products, available_products):
                             site_name=site.get("name", url)
                         )
                         if GOOGLE_SHEETS_CREDS and GOOGLE_SHEETS_ID:
-                            append_row(
-                                creds_json=GOOGLE_SHEETS_CREDS,
-                                sheet_id=GOOGLE_SHEETS_ID,
-                                row_data=[name, product_link or url, price, status_msg, site.get("name", url)]
-                            )
+                            product_data = {
+                                'hash': product_hash,
+                                'product_name': name,
+                                'price': price,
+                                'url': product_link or url,
+                                'store': site.get("name", url),
+                                'status': status_msg
+                            }
+                            google_sheets.update_or_append_row(product_data)
+
                     elif not in_stock and was_available:
                         print(f"  Produkten finns inte längre i lager, tas bort.", flush=True)
                         del available_products[product_hash]
