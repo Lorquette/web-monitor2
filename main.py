@@ -6,12 +6,15 @@ import re
 import time
 import requests
 from urllib.parse import urlparse, urlunparse
+from google_sheets import append_row_to_sheet
 
 DATA_DIR = "data"
 SEEN_PRODUCTS_FILE = os.path.join(DATA_DIR, "seen_products.json")
 AVAILABLE_PRODUCTS_FILE = os.path.join(DATA_DIR, "available_products.json")
 SITES_FILE = "sites.json"
 DISCORD_WEBHOOK = os.getenv("DISCORD_WEBHOOK")
+GOOGLE_SHEETS_CREDS = os.getenv("GOOGLE_SHEETS_CREDS")
+GOOGLE_SHEETS_ID = os.getenv("GOOGLE_SHEETS_ID")
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.43"
 
 KEYWORDS = [
@@ -292,7 +295,12 @@ def scrape_site(site, seen_products, available_products):
                             status="Ny produkt",
                             site_name=site.get("name", url)
                         )
-                        
+                        if GOOGLE_SHEETS_CREDS and GOOGLE_SHEETS_ID:
+                            append_row_to_sheet(
+                                creds_json=GOOGLE_SHEETS_CREDS,
+                                sheet_id=GOOGLE_SHEETS_ID,
+                                row_data=[name, product_link or url, price, "Ny produkt", site.get("name", url)]
+                            )                  
                     # Börja med att kolla om blå knapp finns (preorderknapp)
                     preorder_selector = site.get("preorder_selector")
                     has_preorder_button = False
@@ -359,7 +367,12 @@ def scrape_site(site, seen_products, available_products):
                             status=status_msg,
                             site_name=site.get("name", url)
                         )
-
+                        if GOOGLE_SHEETS_CREDS and GOOGLE_SHEETS_ID:
+                            append_row_to_sheet(
+                                creds_json=GOOGLE_SHEETS_CREDS,
+                                sheet_id=GOOGLE_SHEETS_ID,
+                                row_data=[name, product_link or url, price, status_msg, site.get("name", url)]
+                            )
                     elif not in_stock and was_available:
                         print(f"  Produkten finns inte längre i lager, tas bort.", flush=True)
                         del available_products[product_hash]
