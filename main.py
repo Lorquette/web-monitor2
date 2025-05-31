@@ -295,16 +295,6 @@ def scrape_site(site, seen_products, available_products):
                             status="Ny produkt",
                             site_name=site.get("name", url)
                         )
-                        if GOOGLE_SHEETS_CREDS and GOOGLE_SHEETS_ID:
-                            product_data = {
-                                'hash': product_hash,
-                                'product_name': name,
-                                'price': price,
-                                'url': product_link or url,
-                                'store': site.get("name", url),
-                                'status': "Ny produkt"
-                            }
-                            google_sheets.update_or_append_row(product_data)
                                     
                     # Börja med att kolla om blå knapp finns (preorderknapp)
                     preorder_selector = site.get("preorder_selector")
