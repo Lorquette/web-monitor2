@@ -59,7 +59,7 @@ def append_row(row_data):
     sheet = service.spreadsheets()
     request = sheet.values().append(
         spreadsheetId=SPREADSHEET_ID,
-        range=f'{SHEET_NAME}!A1',  # Startcell A1, låt Google Sheets hantera append
+        range=f'{SHEET_NAME}!A2',  # Startcell A1, låt Google Sheets hantera append
         valueInputOption='RAW',
         # Ta bort insertDataOption för att undvika radinfogning som kan förskjuta data
         body={'values': [row_data]}
