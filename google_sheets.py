@@ -59,7 +59,7 @@ def append_row(row_data):
     sheet = service.spreadsheets()
     request = sheet.values().append(
         spreadsheetId=SPREADSHEET_ID,
-        range=f'{SHEET_NAME}!A1',
+        range=f'{SHEET_NAME}!A:Z',  # Viktigt: inte A1!
         valueInputOption='RAW',
         insertDataOption='INSERT_ROWS',
         body={'values': [row_data]}
