@@ -54,15 +54,27 @@ def update_row(row_index, row_data):
 
 def append_row(row_data):
     """
-    Lägg till en rad (lista med värden) längst ner i Google Sheet.
+    Lägg till en rad längst ner i Google Sheet utan att skriva över befintliga rader.
+    Räknar ut nästa lediga rad genom att läsa antal fyllda rader i kolumn A.
     """
     sheet = service.spreadsheets()
-    request = sheet.values().append(
+    
+    # Läs in alla värden i kolumn A (från rad 1 och neråt)
+    result = sheet.values().get(spreadsheetId=SPREADSHEET_ID, range=f'{SHEET_NAME}!A:A').execute()
+    values = result.get('values', [])
+
+    # Nästa rad är antal rader med innehåll + 1 (eftersom Sheets är 1-baserat)
+    next_row = len(values) + 1
+
+    # Skriv till denna rad
+    range_ = f'{SHEET_NAME}!A{next_row}'
+    body = {'values': [row_data]}
+
+    request = sheet.values().update(
         spreadsheetId=SPREADSHEET_ID,
-        range=f'{SHEET_NAME}!A:A',  # Startcell A1, låt Google Sheets hantera append
+        range=range_,
         valueInputOption='RAW',
-        # Ta bort insertDataOption för att undvika radinfogning som kan förskjuta data
-        body={'values': [row_data]}
+        body=body
     )
     response = request.execute()
     return response
