@@ -71,9 +71,13 @@ def update_or_append_row(product_data):
     """
     Uppdaterar en rad med hash i Google Sheets om den finns,
     annars lägger till en ny rad.
-    product_data är en dict med alla fält, men vi mappar till en lista med kolumner.
     """
-    # 1. Hämta alla hashar i Sheets
+    required_fields = ['product_name', 'price', 'url', 'store']
+    for field in required_fields:
+        if not product_data.get(field):
+            print(f"[!] Fält saknas i produktdata: {field}. Skipping Sheets update.")
+            return
+
     hashes = get_all_hashes()
 
     product_hash = product_data.get('hash')
@@ -81,23 +85,19 @@ def update_or_append_row(product_data):
         raise ValueError("product_data måste innehålla 'hash'")
 
     now_str = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
-    # Mappa product_data till rad som lista med rätt ordning i Sheets
-    # EXEMPEL: (du behöver justera efter din kolumnordning)
+
     row_data = [
-        product_data.get('product_name', ''),
-        product_data.get('price', ''),
-        product_data.get('store', ''),
+        product_data['product_name'],
+        product_data['price'],
+        product_data['store'],
         product_data.get('status', ''),
-        product_data.get('url', ''),
+        product_data['url'],
         now_str,
         product_hash,
-        # Lägg till fler fält efter behov
     ]
 
     if product_hash in hashes:
-        # Uppdatera raden (lägg till 2 för att hoppa över header och pga 1-baserad index)
         row_index = hashes.index(product_hash) + 2
         return update_row(row_index, row_data)
     else:
-        # Append ny rad
         return append_row(row_data)
