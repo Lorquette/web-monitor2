@@ -54,14 +54,14 @@ def update_row(row_index, row_data):
 
 def append_row(row_data):
     """
-    Lägg till en rad (lista med värden) längst ner i Google Sheet
+    Lägg till en rad (lista med värden) längst ner i Google Sheet.
     """
     sheet = service.spreadsheets()
     request = sheet.values().append(
         spreadsheetId=SPREADSHEET_ID,
-        range=f'{SHEET_NAME}!A:Z',  # Viktigt: inte A1!
+        range=f'{SHEET_NAME}!A1',  # Startcell A1, låt Google Sheets hantera append
         valueInputOption='RAW',
-        insertDataOption='INSERT_ROWS',
+        # Ta bort insertDataOption för att undvika radinfogning som kan förskjuta data
         body={'values': [row_data]}
     )
     response = request.execute()
