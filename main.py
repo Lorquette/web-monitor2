@@ -81,7 +81,7 @@ def product_matches_keywords(name):
 def get_availability_status(product_elem, site):
     # 1. Tvingad status (t.ex. Samlarhobby)
     if site.get("availability_status") is True:
-        print("Status: tvingad i lager")
+ #       print("Status: tvingad i lager")
         return "i lager"
 
     # 2. In stock
@@ -90,7 +90,7 @@ def get_availability_status(product_elem, site):
         try:
             elems = product_elem.locator(in_stock_selector)
             count = elems.count()
-            print(f"  In stock - hittade {count} element med selector '{in_stock_selector}'")
+         #   print(f"  In stock - hittade {count} element med selector '{in_stock_selector}'")
             for i in range(count):
                 elem = elems.nth(i)
                 span = elem.locator("span")
@@ -98,9 +98,9 @@ def get_availability_status(product_elem, site):
                     text = span.first.inner_text().strip().lower()
                 else:
                     text = elem.inner_text().strip().lower()
-                print(f"    In stock text: '{text}'")
+          #      print(f"    In stock text: '{text}'")
                 if any(word in text for word in ["i lager", "available", "in stock", "köp", "boka", "lägg i varukorg", "preorder", "add to cart"]):
-                    print("    -> Produkt bedömd som i lager")
+          #          print("    -> Produkt bedömd som i lager")
                     return "i lager"
         except Exception as e:
             print(f"  Fel vid in_stock_selector: {e}", flush=True)
@@ -112,7 +112,7 @@ def get_availability_status(product_elem, site):
         try:
             elems = product_elem.locator(out_of_stock_selector)
             count = elems.count()
-            print(f"  Out of stock - hittade {count} element med selector '{out_of_stock_selector}'")
+     #       print(f"  Out of stock - hittade {count} element med selector '{out_of_stock_selector}'")
             for i in range(count):
                 elem = elems.nth(i)
                 span = elem.locator("span")
@@ -120,9 +120,9 @@ def get_availability_status(product_elem, site):
                     text = span.first.inner_text().strip().lower()
                 else:
                     text = elem.inner_text().strip().lower()
-                print(f"    Out of stock text: '{text}'")
+            #    print(f"    Out of stock text: '{text}'")
                 if out_of_stock_text in text:
-                    print("    -> Produkt bedömd som slutsåld")
+            #        print("    -> Produkt bedömd som slutsåld")
                     return "slutsåld"
         except Exception as e:
             print(f"  Fel vid out_of_stock_selector: {e}", flush=True)
@@ -130,12 +130,12 @@ def get_availability_status(product_elem, site):
         try:
             count = product_elem.locator(out_of_stock_selector).count()
             if count == 0 and site.get("treat_missing_out_of_stock_as_in_stock") is True:
-                print("    -> Saknas slutsåld-element, behandlas som i lager pga inställning")
+        #        print("    -> Saknas slutsåld-element, behandlas som i lager pga inställning")
                 return "i lager"
         except Exception as e:
             print(f"  Fel vid kontroll av frånvaro av slutsåld-element: {e}", flush=True)
 
-    print("    -> Produkt status okänd")
+#    print("    -> Produkt status okänd")
     return "okänd"
 
 def scroll_to_load_all(page, product_selector, use_mouse_wheel=False):
@@ -309,7 +309,7 @@ def scrape_site(site, seen_products, available_products):
                     product_hash = hash_string(f"{name}|{product_link}")
 
                     if product_hash not in seen_products:
-                        print(f"  Ny produkt upptäckt!", flush=True)
+              #          print(f"  Ny produkt upptäckt!", flush=True)
                         seen_products[product_hash] = name
                         new_seen = True
                         send_discord_message(
@@ -333,7 +333,7 @@ def scrape_site(site, seen_products, available_products):
                     if has_preorder_button:
                         in_stock = True
                         preorder = True
-                        print(f"  Produkten är preorderbar via blå knapp.", flush=True)
+            #            print(f"  Produkten är preorderbar.", flush=True)
                     else:
                         preorder = False
                         is_not_released = False
@@ -343,7 +343,7 @@ def scrape_site(site, seen_products, available_products):
                                 is_not_released = not_released_elem.count() > 0
                             except Exception:
                                 is_not_released = False
-                        print(f"  Är produkten inte släppt än? {is_not_released}", flush=True)
+               #         print(f"  Är produkten inte släppt än? {is_not_released}", flush=True)
                     
                         if is_not_released:
                             product_link = None
@@ -355,7 +355,7 @@ def scrape_site(site, seen_products, available_products):
 
                             except Exception:
                                 pass
-                            print(f"  Produktlänk: {product_link}", flush=True)
+                       #     print(f"  Produktlänk: {product_link}", flush=True)
                     
                             if product_link:
                                 product_link = clean_product_link(product_link)
@@ -365,7 +365,7 @@ def scrape_site(site, seen_products, available_products):
                         else:
                             in_stock = (availability_status == "i lager")
                     
-                    print(f"  I lager (eller preorderbar): {in_stock}", flush=True)
+               #     print(f"  I lager (eller förbokningsbar): {in_stock}", flush=True)
 
                     was_available = product_hash in available_products
 
