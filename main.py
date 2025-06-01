@@ -21,6 +21,10 @@ KEYWORDS = [
     "Pokémon", "Pokemon", "Destined Rivals", "Prismatic Evolutions", "Journey Together", "Black Bolt", "White Flare"
 ]
 
+BLOCKED_KEYWORDS = [
+    "Deck Box", "Binder", "Pärm", "Portfolio", "Playmat", "Stacking Tin"
+]
+
 def load_json(file_path):
     if os.path.exists(file_path):
         with open(file_path, "r", encoding="utf-8") as f:
@@ -76,6 +80,12 @@ def send_discord_message(name, url, price, status, site_name):
         print(f"Exception while sending Discord message: {e}", flush=True)
 
 def product_matches_keywords(name):
+    name_lower = name.lower()
+
+    for blocked in BLOCKED_KEYWORDS:
+        if blocked.lower() in name_lower:
+            return False  # Produkter med blockerat ord ska inte matcha
+
     return any(re.search(keyword, name, re.IGNORECASE) for keyword in KEYWORDS)
 
 def get_availability_status(product_elem, site):
