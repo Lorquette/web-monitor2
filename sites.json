@@ -115,5 +115,30 @@
   "buy_button_selector": "button.add-to-cart:not([disabled])",
   "use_scroll": false,
   "skip_keywords": true
+},
+{
+"name": "Spel & Sånt",
+"urls": [
+  "https://www.spelochsant.se/kategori/pokemonkort/losaboosters",
+  "https://www.spelochsant.se/kategori/pokemonkort/boosterdisplayer",
+  "https://www.spelochsant.se/kategori/pokemonkort/fardigbyggdalekar",
+  "https://www.spelochsant.se/kategori/pokemonkort/tinboxar",
+  "https://www.spelochsant.se/kategori/pokemonkort/ovrigapokemonkort"
+  ],
+"skip_keywords": true,
+"base_url": "https://www.spelochsant.se/",
+"product_selector": "div.sos_product_list > div.product-wrapper",
+"name_selector": "div.sl-information__title a",
+"price_selector": "div.sl-price-big",
+"preorder_selector": "div.button.booking",
+"availability_selector": "div.button.buy, div.button.booking",
+"availability_in_stock_selector": "div.button.buy, div.button.booking",
+"availability_out_of_stock_selector": "div.button.subscribe",
+"availability_out_of_stock_text": "",
+"product_link_selector": "div.sl-information__title a",
+"buy_button_selector": "",
+"check_product_page_if_not_released": false,
+"not_released_selector": "",
+"use_scroll": true
 }
 ]
