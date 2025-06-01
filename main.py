@@ -411,7 +411,7 @@ def get_all_products(site):
 
         try:
             page.goto(url, timeout=10000)
-            scroll_to_load_all(page, product_selector)
+            scroll_to_load_all(page, product_selector, site.get("use_mouse_wheel", False))
             products = page.locator(product_selector)
             count = products.count()
         except Exception as e:
