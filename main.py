@@ -81,6 +81,7 @@ def product_matches_keywords(name):
 def get_availability_status(product_elem, site):
     # 1. Tvingad status (t.ex. Samlarhobby)
     if site.get("availability_status") is True:
+        print("Status: tvingad i lager")
         return "i lager"
 
     # 2. In stock
@@ -89,15 +90,17 @@ def get_availability_status(product_elem, site):
         try:
             elems = product_elem.locator(in_stock_selector)
             count = elems.count()
+            print(f"  In stock - hittade {count} element med selector '{in_stock_selector}'")
             for i in range(count):
                 elem = elems.nth(i)
-                # Försök först med span
                 span = elem.locator("span")
                 if span.count() > 0:
                     text = span.first.inner_text().strip().lower()
                 else:
                     text = elem.inner_text().strip().lower()
+                print(f"    In stock text: '{text}'")
                 if any(word in text for word in ["i lager", "available", "in stock", "köp", "boka", "lägg i varukorg"]):
+                    print("    -> Produkt bedömd som i lager")
                     return "i lager"
         except Exception as e:
             print(f"  Fel vid in_stock_selector: {e}", flush=True)
@@ -109,6 +112,7 @@ def get_availability_status(product_elem, site):
         try:
             elems = product_elem.locator(out_of_stock_selector)
             count = elems.count()
+            print(f"  Out of stock - hittade {count} element med selector '{out_of_stock_selector}'")
             for i in range(count):
                 elem = elems.nth(i)
                 span = elem.locator("span")
@@ -116,7 +120,9 @@ def get_availability_status(product_elem, site):
                     text = span.first.inner_text().strip().lower()
                 else:
                     text = elem.inner_text().strip().lower()
+                print(f"    Out of stock text: '{text}'")
                 if out_of_stock_text in text:
+                    print("    -> Produkt bedömd som slutsåld")
                     return "slutsåld"
         except Exception as e:
             print(f"  Fel vid out_of_stock_selector: {e}", flush=True)
@@ -124,10 +130,12 @@ def get_availability_status(product_elem, site):
         try:
             count = product_elem.locator(out_of_stock_selector).count()
             if count == 0 and site.get("treat_missing_out_of_stock_as_in_stock") is True:
+                print("    -> Saknas slutsåld-element, behandlas som i lager pga inställning")
                 return "i lager"
         except Exception as e:
             print(f"  Fel vid kontroll av frånvaro av slutsåld-element: {e}", flush=True)
 
+    print("    -> Produkt status okänd")
     return "okänd"
 
 def scroll_to_load_all(page, product_selector, use_mouse_wheel=False):
@@ -451,9 +459,9 @@ def get_all_products(site):
         
                 # Hämta tillgänglighetsstatus (i lager, slutsåld, okänd)
                 status = get_availability_status(product_elem, site)
-        
-                # Logga för felsökning
-                print(f"🔍 Produkt {i}: '{name}' — Status: {status} — Text: '{availability_text}'", flush=True)
+
+                if status == "okänd":
+                    print(f"🔍 Produkt {i}: '{name}' — Status: {status} — Text: '{availability_text}'", flush=True)
         
                 products_list.append({
                     "name": name,
