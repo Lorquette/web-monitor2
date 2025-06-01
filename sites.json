@@ -127,7 +127,7 @@
   ],
 "skip_keywords": true,
 "base_url": "https://www.spelochsant.se/",
-"product_selector": "div.sos_product_list > div.product-wrapper",
+"product_selector": "div.list-boxes > div.product",
 "name_selector": "div.sl-information__title a",
 "price_selector": "div.sl-price-big",
 "preorder_selector": "div.button.booking",
