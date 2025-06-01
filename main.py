@@ -97,7 +97,7 @@ def get_availability_status(product_elem, site):
                     text = span.first.inner_text().strip().lower()
                 else:
                     text = elem.inner_text().strip().lower()
-                if any(word in text for word in ["i lager", "available", "in stock", "köp", "boka"]):
+                if any(word in text for word in ["i lager", "available", "in stock", "köp", "boka", "lägg i varukorg"]):
                     return "i lager"
         except Exception as e:
             print(f"  Fel vid in_stock_selector: {e}", flush=True)
