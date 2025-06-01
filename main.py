@@ -117,7 +117,7 @@ def get_availability_status(product_elem, site):
     
     return "okänd"
 
-def scroll_to_load_all(page, product_selector):
+def scroll_to_load_all(page, product_selector, use_mouse_wheel=False):
     start = time.time()
     print(f"Scroll-funktionen startar vid {start:.2f} sek", flush=True)
 
@@ -128,7 +128,10 @@ def scroll_to_load_all(page, product_selector):
     while attempts < max_attempts:
         print(f"Innan scrollförsök {attempts + 1}...", flush=True)
         try:
-            page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+            if use_mouse_wheel:
+                page.mouse.wheel(0, 2000)
+            else:
+                page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
             print("Scrollning utförd.", flush=True)
         except Exception as e:
             print(f"Fel vid scrollning: {e}", flush=True)
@@ -215,7 +218,7 @@ def scrape_site(site, seen_products, available_products):
             if site.get("use_scroll", True):
                 print("Startar scrollning för att ladda produkter...", flush=True)
                 scroll_start = time.time()
-                scroll_to_load_all(page, product_selector)
+                scroll_to_load_all(page, product_selector, site.get("use_mouse_wheel", False))
                 print(f"Scrollning klar efter {time.time()-scroll_start:.2f} sek", flush=True)
             else:
                 print("Scrollning avaktiverad enligt konfiguration.", flush=True)
