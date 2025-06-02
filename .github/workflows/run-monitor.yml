@@ -53,6 +53,7 @@ jobs:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
           GOOGLE_SHEETS_CREDS: ${{ secrets.GOOGLE_SHEETS_CREDS }}
           GOOGLE_SHEETS_ID: ${{ secrets.GOOGLE_SHEETS_ID }}
+          GOOGLE_SHEETS_ID_S: ${{ secrets.GOOGLE_SHEETS_ID_S }}
         run: python main.py
 
       - name: Commit and push updated data files
