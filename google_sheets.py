@@ -146,7 +146,6 @@ def read_sites_from_sheet():
         raise Exception("Miljövariabeln GOOGLE_SHEETS_CREDS är inte satt")
 
     creds_dict = json.loads(SERVICE_ACCOUNT_INFO)
-
     gc = gspread.service_account_from_dict(creds_dict)
 
     SPREADSHEET_ID_S = os.getenv("GOOGLE_SHEETS_ID_S")
@@ -162,8 +161,13 @@ def read_sites_from_sheet():
     site_names = data[0][1:]
     sites = [{} for _ in site_names]
 
+    # Läs rader, sluta när första kolumnen tom (ingen nyckel)
     for row in data[1:]:
         key = row[0].strip()
+        if key == "":
+            break  # Sluta läsa fler rader om första kolumnen är tom
+
+        # För varje site (kolumn från index 1 och framåt)
         for i, val in enumerate(row[1:]):
             sites[i][key] = convert_value(val)
 
