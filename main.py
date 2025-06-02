@@ -491,10 +491,7 @@ def main():
     available_products = load_json(AVAILABLE_PRODUCTS_FILE)
 
     try:
-        sites = google_sheets.read_sites_from_sheet(
-            sheet_id=GOOGLE_SHEETS_ID2,
-            creds=json.loads(GOOGLE_SHEETS_CREDS)
-        )
+        sites = google_sheets.read_sites_from_sheet()
     except Exception as e:
         print(f"Fel vid läsning av sites från Google Sheets: {e}", flush=True)
         return
