@@ -137,8 +137,8 @@ def convert_value(val):
 
 def read_sites_from_sheet():
     """
-    Läser in site-data från ett transponerat Google Sheet med ID i
-    miljövariabeln GOOGLE_SHEETS_ID2 och credentials från GOOGLE_SHEETS_CREDS.
+    Läser in site-data från ett Google Sheet med ID i
+    miljövariabeln GOOGLE_SHEETS_ID_S och credentials från GOOGLE_SHEETS_CREDS.
     Returnerar en lista med dicts, där varje dict representerar en site.
     """
     SERVICE_ACCOUNT_INFO = os.getenv("GOOGLE_SHEETS_CREDS")
@@ -149,11 +149,11 @@ def read_sites_from_sheet():
 
     gc = gspread.service_account_from_dict(creds_dict)
 
-    SPREADSHEET_ID2 = os.getenv("GOOGLE_SHEETS_ID2")
-    if not SPREADSHEET_ID2:
-        raise Exception("Miljövariabeln GOOGLE_SHEETS_ID2 är inte satt")
+    SPREADSHEET_ID_S = os.getenv("GOOGLE_SHEETS_ID_S")
+    if not SPREADSHEET_ID_S:
+        raise Exception("Miljövariabeln GOOGLE_SHEETS_ID_S är inte satt")
 
-    sh = gc.open_by_key(SPREADSHEET_ID2)
+    sh = gc.open_by_key(SPREADSHEET_ID_S)
     worksheet = sh.worksheet("Sites")
 
     data = worksheet.get_all_values()  # Hela arket som lista av listor (2D-array)
