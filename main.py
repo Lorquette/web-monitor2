@@ -44,6 +44,12 @@ def clean_product_link(url):
     parsed = urlparse(url)
     return urlunparse((parsed.scheme, parsed.netloc, parsed.path, '', '', ''))
 
+def safe_int(value, default=1):
+    try:
+        return int(float(value))  # Hanterar även "1.0"
+    except (ValueError, TypeError):
+        return default
+
 def send_discord_message(name, url, price, status, site_name):
     if not DISCORD_WEBHOOK:
         print("No Discord webhook set in environment variable.", flush=True)
@@ -193,17 +199,21 @@ def scrape_site(site, seen_products, available_products):
     product_selector = site["product_selector"]
     name_selector = site["name_selector"]
     availability_selector = site.get("availability_selector")  # Behåll för fallback, men används ej längre
+    start = safe_int(site.get("start_page", 1))
+    end = start + safe_int(site.get("max_pages", 1))
     
     if "url_pattern" in site:
-        urls_to_scrape = [site["url_pattern"].format(page=p) for p in range(site.get("start_page", 1), site.get("start_page", 1) + site.get("max_pages", 1))]
+        urls_to_scrape = [site["url_pattern"].format(page=p) for p in range(start, end)]
+
     elif "url_pattern_complex" in site:
         url_lv1_list = site.get("url_pattern_lv1", [""])
         urls_to_scrape = []
-
+    
         for lv1 in url_lv1_list:
-            for p in range(site.get("start_page", 1), site.get("start_page", 1) + site.get("max_pages", 1)):
+            for p in range(start, end):
                 url = site["url_pattern_complex"].format(url_pattern_lv1=lv1, page=p)
-                urls_to_scrape.append(url)  
+                urls_to_scrape.append(url)
+
     elif "url" in site:
         urls_to_scrape = [site["url"]]
     elif "urls" in site:
