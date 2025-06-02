@@ -149,11 +149,11 @@ def read_sites_from_sheet():
 
     gc = gspread.service_account_from_dict(creds_dict)
 
-    SPREADSHEET_ID_2 = os.getenv("GOOGLE_SHEETS_ID2")
-    if not SPREADSHEET_ID_2:
+    SPREADSHEET_ID2 = os.getenv("GOOGLE_SHEETS_ID2")
+    if not SPREADSHEET_ID2:
         raise Exception("Miljövariabeln GOOGLE_SHEETS_ID2 är inte satt")
 
-    sh = gc.open_by_key(SPREADSHEET_ID_2)
+    sh = gc.open_by_key(SPREADSHEET_ID2)
     worksheet = sh.worksheet("Sites")
 
     data = worksheet.get_all_values()  # Hela arket som lista av listor (2D-array)
