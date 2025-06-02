@@ -522,13 +522,15 @@ def get_all_products(site):
 def main():
     seen_products = load_json(SEEN_PRODUCTS_FILE)
     available_products = load_json(AVAILABLE_PRODUCTS_FILE)
-
+    sites = google_sheets.read_sites_from_sheet()
+    
+'''
     try:
         sites = google_sheets.read_sites_from_sheet()
     except Exception as e:
         print(f"Fel vid läsning av sites från Google Sheets: {e}", flush=True)
         return
-
+'''
     if not sites:
         print("Inga sites hittades i Google Sheets eller arket är tomt.", flush=True)
         return
