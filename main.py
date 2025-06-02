@@ -15,7 +15,7 @@ AVAILABLE_PRODUCTS_FILE = os.path.join(DATA_DIR, "available_products.json")
 DISCORD_WEBHOOK = os.getenv("DISCORD_WEBHOOK")
 GOOGLE_SHEETS_CREDS = os.getenv("GOOGLE_SHEETS_CREDS")
 GOOGLE_SHEETS_ID = os.getenv("GOOGLE_SHEETS_ID")
-GOOGLE_SHEETS_ID2 = os.getenv("GOOGLE_SHEETS_ID2")
+GOOGLE_SHEETS_ID_S = os.getenv("GOOGLE_SHEETS_ID_S")
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.43"
 
 KEYWORDS = [
