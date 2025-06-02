@@ -3,7 +3,8 @@ import json
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
 from datetime import datetime
-
+import ast
+import gspread
 
 # Läs in JSON-credentials från secret
 SERVICE_ACCOUNT_INFO = os.getenv("GOOGLE_SHEETS_CREDS")
@@ -113,3 +114,57 @@ def update_or_append_row(product_data):
         return update_row(row_index, row_data)
     else:
         return append_row(row_data)
+
+def convert_value(val):
+    """Försök konvertera värdet till rätt typ."""
+    if isinstance(val, bool):
+        return val
+    if isinstance(val, (int, float)):
+        return val
+    if not isinstance(val, str):
+        return val
+    val = val.strip()
+    if val.lower() in ["true", "yes", "1"]:
+        return True
+    if val.lower() in ["false", "no", "0"]:
+        return False
+    if val.startswith("[") and val.endswith("]"):
+        try:
+            return ast.literal_eval(val)
+        except:
+            return val
+    return val
+
+def read_sites_from_sheet():
+    """
+    Läser in site-data från ett transponerat Google Sheet med ID i
+    miljövariabeln GOOGLE_SHEETS_ID2 och credentials från GOOGLE_SHEETS_CREDS.
+    Returnerar en lista med dicts, där varje dict representerar en site.
+    """
+    SERVICE_ACCOUNT_INFO = os.getenv("GOOGLE_SHEETS_CREDS")
+    if not SERVICE_ACCOUNT_INFO:
+        raise Exception("Miljövariabeln GOOGLE_SHEETS_CREDS är inte satt")
+
+    creds_dict = json.loads(SERVICE_ACCOUNT_INFO)
+
+    gc = gspread.service_account_from_dict(creds_dict)
+
+    SPREADSHEET_ID_2 = os.getenv("GOOGLE_SHEETS_ID2")
+    if not SPREADSHEET_ID_2:
+        raise Exception("Miljövariabeln GOOGLE_SHEETS_ID2 är inte satt")
+
+    sh = gc.open_by_key(SPREADSHEET_ID_2)
+    worksheet = sh.worksheet("Sites")
+
+    data = worksheet.get_all_values()  # Hela arket som lista av listor (2D-array)
+
+    # Första raden innehåller site-namn (kolumnrubriker) från index 1 och framåt
+    site_names = data[0][1:]
+    sites = [{} for _ in site_names]
+
+    for row in data[1:]:
+        key = row[0].strip()
+        for i, val in enumerate(row[1:]):
+            sites[i][key] = convert_value(val)
+
+    return sites
