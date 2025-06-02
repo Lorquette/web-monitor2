@@ -11,10 +11,11 @@ import google_sheets
 DATA_DIR = "data"
 SEEN_PRODUCTS_FILE = os.path.join(DATA_DIR, "seen_products.json")
 AVAILABLE_PRODUCTS_FILE = os.path.join(DATA_DIR, "available_products.json")
-SITES_FILE = "sites.json"
+# SITES_FILE = "sites.json"
 DISCORD_WEBHOOK = os.getenv("DISCORD_WEBHOOK")
 GOOGLE_SHEETS_CREDS = os.getenv("GOOGLE_SHEETS_CREDS")
 GOOGLE_SHEETS_ID = os.getenv("GOOGLE_SHEETS_ID")
+GOOGLE_SHEETS_ID2 = os.getenv("GOOGLE_SHEETS_ID2")
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.43"
 
 KEYWORDS = [
@@ -488,10 +489,18 @@ def get_all_products(site):
 def main():
     seen_products = load_json(SEEN_PRODUCTS_FILE)
     available_products = load_json(AVAILABLE_PRODUCTS_FILE)
-    sites = load_json(SITES_FILE)
+
+    try:
+        sites = google_sheets.read_sites_from_sheet(
+            sheet_id=GOOGLE_SHEETS_ID2,
+            creds=json.loads(GOOGLE_SHEETS_CREDS)
+        )
+    except Exception as e:
+        print(f"Fel vid läsning av sites från Google Sheets: {e}", flush=True)
+        return
 
     if not sites:
-        print("Ingen sites.json hittades eller den är tom.", flush=True)
+        print("Inga sites hittades i Google Sheets eller arket är tomt.", flush=True)
         return
 
     any_changes = False
