@@ -195,31 +195,50 @@ def scroll_to_load_all(page, product_selector, use_mouse_wheel=False):
     end = time.time()
     print(f"Scroll-funktionen avslutades efter {end - start:.2f} sekunder", flush=True)
 
+import json
+
 def scrape_site(site, seen_products, available_products):
     product_selector = site["product_selector"]
     name_selector = site["name_selector"]
-    availability_selector = site.get("availability_selector")  # Behåll för fallback, men används ej längre
-    start = safe_int(site.get("start_page", 1))
-    end = start + safe_int(site.get("max_pages", 1))
-    
-    if "url_pattern" in site:
+
+    if "url_pattern" in site and site["url_pattern"]:
+        start = safe_int(site.get("start_page", 1))
+        end = start + safe_int(site.get("max_pages", 1))
         urls_to_scrape = [site["url_pattern"].format(page=p) for p in range(start, end)]
 
-    elif "url_pattern_complex" in site:
+    elif "url_pattern_complex" in site and site["url_pattern_complex"]:
+        start = safe_int(site.get("start_page", 1))
+        end = start + safe_int(site.get("max_pages", 1))
+
         url_lv1_list = site.get("url_pattern_lv1", [""])
+        if isinstance(url_lv1_list, str):
+            try:
+                url_lv1_list = json.loads(url_lv1_list)
+            except json.JSONDecodeError:
+                print("❌ Fel i url_pattern_lv1-formatet.")
+                return False
+
         urls_to_scrape = []
-    
         for lv1 in url_lv1_list:
             for p in range(start, end):
                 url = site["url_pattern_complex"].format(url_pattern_lv1=lv1, page=p)
                 urls_to_scrape.append(url)
 
-    elif "url" in site:
+    elif "url" in site and site["url"]:
         urls_to_scrape = [site["url"]]
-    elif "urls" in site:
-        urls_to_scrape = site["urls"]
+
+    elif "urls" in site and site["urls"]:
+        if isinstance(site["urls"], str):
+            try:
+                urls_to_scrape = json.loads(site["urls"])
+            except json.JSONDecodeError:
+                print("❌ Fel i 'urls'-formatet.")
+                return False
+        else:
+            urls_to_scrape = site["urls"]
+
     else:
-        print("Ingen giltig URL-konfiguration för siten.", flush=True)
+        print("❌ Ingen giltig URL-konfiguration för siten.", flush=True)
         return False
 
     new_seen = False
@@ -248,6 +267,10 @@ def scrape_site(site, seen_products, available_products):
                 print(f"Preorder-check klar på {time.time()-start_pre:.2f} sek", flush=True)
 
         for url in urls_to_scrape:
+            if not url:
+                print("⚠️ URL är tom, hoppar över.", flush=True)
+                continue
+        
             print(f"\n-- Hämtar: {url} --", flush=True)
             start_page_load = time.time()
             try:
