@@ -115,6 +115,50 @@ def update_or_append_row(product_data):
     else:
         return append_row(row_data)
 
+def delete_rows_with_missing_hashes(available_products):
+    """
+    Tar bort rader i Google Sheets där hash i kolumn G finns i Sheets men inte i available_products.
+    available_products är en dict med hashar som nycklar (från available_products.json).
+    """
+    sheet = service.spreadsheets()
+    
+    # Läs in hela kolumn G, men också radnummer för att kunna ta bort rätt rad
+    range_ = f'{SHEET_NAME}!G2:G'
+    result = sheet.values().get(spreadsheetId=SPREADSHEET_ID, range=range_).execute()
+    values = result.get('values', [])
+
+    # Vi behöver en lista med (row_index, hash)
+    # row_index är 1-baserat i Google Sheets, +1 för header och +1 för offset (börjar på rad 2)
+    rows_with_hash = [(i + 2, row[0]) for i, row in enumerate(values) if row]
+
+    # Identifiera rader att ta bort
+    rows_to_delete = [row_index for row_index, hash_val in rows_with_hash if hash_val not in available_products]
+
+    if not rows_to_delete:
+        print("[INFO] Inga rader att ta bort från Google Sheets.")
+        return
+
+    print(f"[INFO] Kommer ta bort {len(rows_to_delete)} rader från Google Sheets: {rows_to_delete}")
+
+    # Viktigt: Radera från botten till toppen så att radnumren inte skiftar när vi tar bort flera
+    rows_to_delete.sort(reverse=True)
+
+    for row_index in rows_to_delete:
+        request_body = {
+            "requests": [{
+                "deleteDimension": {
+                    "range": {
+                        "sheetId": 0,  # OBS: Kolla sheetId! Om du inte vet, kan du behöva hämta det från Sheets API
+                        "dimension": "ROWS",
+                        "startIndex": row_index - 1,  # 0-baserat index i API
+                        "endIndex": row_index
+                    }
+                }
+            }]
+        }
+        response = service.spreadsheets().batchUpdate(spreadsheetId=SPREADSHEET_ID, body=request_body).execute()
+        print(f"[INFO] Tog bort rad {row_index} i Google Sheets.")
+
 def convert_value(val):
     """Försök konvertera värdet till rätt typ."""
     if isinstance(val, bool):
