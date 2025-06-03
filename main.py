@@ -19,11 +19,11 @@ GOOGLE_SHEETS_ID_S = os.getenv("GOOGLE_SHEETS_ID_S")
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.43"
 
 KEYWORDS = [
-    "Pokémon", "Pokemon", "Destined Rivals", "Prismatic Evolutions", "Journey Together", "Black Bolt", "White Flare"
+    "Pokémon", "Pokemon", "Destined Rivals", "Prismatic Evolutions", "Journey Together", "Black Bolt", "White Flare", "151", "Scarlet & Violet", "Sword & Shield"
 ]
 
 BLOCKED_KEYWORDS = [
-    "Deck Box", "Binder", "Pärm", "Portfolio", "Playmat", "Stacking Tin"
+    "Deck Box", "Binder", "Pärm", "Portfolio", "Playmat", "Stacking Tin", "Mugg", "Ryggsäck", "Stort kort"
 ]
 
 def load_json(file_path):
