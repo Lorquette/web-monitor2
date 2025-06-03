@@ -546,6 +546,8 @@ def main():
     save_json(SEEN_PRODUCTS_FILE, seen_products)
     save_json(AVAILABLE_PRODUCTS_FILE, available_products)
 
+    google_sheets.delete_rows_with_missing_hashes(available_products)
+    
     # --- NYTT: skriv ut alla produkter från första siten för debugging ---
     if sites:
         print("\n--- Alla produkter på första siten ---", flush=True)
