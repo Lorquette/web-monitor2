@@ -136,11 +136,6 @@ def convert_value(val):
     return val
 
 def read_sites_from_sheet():
-    """
-    Läser in site-data från ett Google Sheet med ID i
-    miljövariabeln GOOGLE_SHEETS_ID_S och credentials från GOOGLE_SHEETS_CREDS.
-    Returnerar en lista med dicts, där varje dict representerar en site.
-    """
     SERVICE_ACCOUNT_INFO = os.getenv("GOOGLE_SHEETS_CREDS")
     if not SERVICE_ACCOUNT_INFO:
         raise Exception("Miljövariabeln GOOGLE_SHEETS_CREDS är inte satt")
@@ -157,26 +152,32 @@ def read_sites_from_sheet():
 
     data = worksheet.get_all_values()
 
-    if not data or len(data) < 2:
-        return []
-
-    header = data[0][1:]  # Site-namn (kolumnrubriker efter första kolumnen)
-    rows = data[1:]       # Resterande rader med nycklar och värden
+    # Första raden är nycklar (kolumnrubriker) - första kolumn är 'key'
+    keys = data[0]
+    rows = data[1:]
 
     sites = []
-    for col_index, site_name in enumerate(header):
-        site_data = {"name": site_name}
-        for row in rows:
-            if len(row) < col_index + 2:
+    for col_idx in range(1, len(keys)):
+        site = {}
+        for row_idx in range(len(rows)):
+            key = rows[row_idx][0].strip()
+            if not key:
                 continue
-            key = row[0].strip()
-            value = row[col_index + 1].strip()
-            if not key or value == "":
-                continue
-            try:
-                site_data[key] = ast.literal_eval(value)
-            except Exception:
-                site_data[key] = convert_value(value)
-        sites.append(site_data)
+            value = rows[row_idx][col_idx] if col_idx < len(rows[row_idx]) else ''
+            if value:
+                site[key] = convert_value(value)
+        sites.append(site)
+
+    # Debug-utskrift av all data
+    print("DEBUG: Lästa sites från Google Sheets:")
+    print(json.dumps(sites, indent=2, ensure_ascii=False))
+
+    # Validera att viktiga nycklar finns i varje site
+    viktiga_nycklar = ['name', 'product_selector', 'url']
+    for i, site in enumerate(sites):
+        saknas = [k for k in viktiga_nycklar if k not in site]
+        if saknas:
+            print(f"DEBUG WARNING: Site index {i} saknar nycklar: {saknas}")
 
     return sites
+
