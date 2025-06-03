@@ -11,7 +11,7 @@ import google_sheets
 DATA_DIR = "data"
 SEEN_PRODUCTS_FILE = os.path.join(DATA_DIR, "seen_products.json")
 AVAILABLE_PRODUCTS_FILE = os.path.join(DATA_DIR, "available_products.json")
-SITES_FILE = "sites.json"
+# SITES_FILE = "sites.json"
 DISCORD_WEBHOOK = os.getenv("DISCORD_WEBHOOK")
 GOOGLE_SHEETS_CREDS = os.getenv("GOOGLE_SHEETS_CREDS")
 GOOGLE_SHEETS_ID = os.getenv("GOOGLE_SHEETS_ID")
@@ -522,8 +522,8 @@ def get_all_products(site):
 def main():
     seen_products = load_json(SEEN_PRODUCTS_FILE)
     available_products = load_json(AVAILABLE_PRODUCTS_FILE)
-    sites = load_json(SITES_FILE)
-#    sites = google_sheets.read_sites_from_sheet()
+#    sites = load_json(SITES_FILE)
+    sites = google_sheets.read_sites_from_sheet()
     
 
 #    try:
