@@ -450,16 +450,11 @@ def scrape_site(site, seen_products, available_products):
                     print(f"Fel vid hantering av produkt {i} på {url}: {e}", flush=True)
                 finally:
                     print(f"  Hantering av produkt {i+1} klar på {time.time()-product_start:.2f} sek", flush=True)
-
-        for old_hash in list(available_products.keys()):
-            if old_hash not in all_products_hashes:
-                print(f"Produkten med hash {old_hash} hittades inte längre på någon sida — tas bort.", flush=True)
-                del available_products[old_hash]
         
         product_page.close()
         browser.close()
 
-    return new_seen or new_available
+    return new_seen or new_available, all_products_hashes
     
 def get_all_products(site):
     product_selector = site["product_selector"]
@@ -528,30 +523,29 @@ def get_all_products(site):
 def main():
     seen_products = load_json(SEEN_PRODUCTS_FILE)
     available_products = load_json(AVAILABLE_PRODUCTS_FILE)
-#    sites = load_json(SITES_FILE)
     sites = google_sheets.read_sites_from_sheet()
-    
-
-#    try:
-#        sites = google_sheets.read_sites_from_sheet()
-#    except Exception as e:
-#        print(f"Fel vid läsning av sites från Google Sheets: {e}", flush=True)
-#        return
 
     if not sites:
         print("Inga sites hittades i Google Sheets eller arket är tomt.", flush=True)
         return
 
     any_changes = False
+    all_found_hashes = set()
 
     for site in sites:
         print(f"Skannar: {site.get('name') or site.get('url') or site.get('url_pattern') or site.get('url_pattern_complex') or 'Okänd site'}", flush=True)
-        changed = scrape_site(site, seen_products, available_products)
+        changed, hashes_this_site = scrape_site(site, seen_products, available_products)
+        all_found_hashes.update(hashes_this_site)
         any_changes = any_changes or changed
+
+    # Ta bort produkter som inte längre hittas på någon site
+    for old_hash in list(available_products.keys()):
+        if old_hash not in all_found_hashes:
+            print(f"Produkten med hash {old_hash} hittades inte längre på någon site — tas bort.", flush=True)
+            del available_products[old_hash]
 
     save_json(SEEN_PRODUCTS_FILE, seen_products)
     save_json(AVAILABLE_PRODUCTS_FILE, available_products)
-
     google_sheets.delete_rows_with_missing_hashes(available_products)
     
     # --- NYTT: skriv ut alla produkter från första siten för debugging ---
