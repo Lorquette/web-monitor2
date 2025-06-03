@@ -173,7 +173,7 @@ def read_sites_from_sheet():
     print(json.dumps(sites, indent=2, ensure_ascii=False))
 
     # Validera att viktiga nycklar finns i varje site
-    viktiga_nycklar = ['name', 'product_selector', 'url']
+    viktiga_nycklar = ['name', 'product_selector']
     for i, site in enumerate(sites):
         saknas = [k for k in viktiga_nycklar if k not in site]
         if saknas:
