@@ -124,12 +124,12 @@ def get_availability_status(product_elem, site):
 
     # 3. Out of stock
     out_of_stock_selector = site.get("availability_out_of_stock_selector")
-    out_of_stock_text = site.get("availability_out_of_stock_text", "").lower()
+    out_of_stock_texts = [t.strip().lower() for t in site.get("availability_out_of_stock_text", "").split(",")]
+    
     if out_of_stock_selector:
         try:
             elems = product_elem.locator(out_of_stock_selector)
             count = elems.count()
-     #       print(f"  Out of stock - hittade {count} element med selector '{out_of_stock_selector}'")
             for i in range(count):
                 elem = elems.nth(i)
                 span = elem.locator("span")
@@ -137,63 +137,58 @@ def get_availability_status(product_elem, site):
                     text = span.first.inner_text().strip().lower()
                 else:
                     text = elem.inner_text().strip().lower()
-            #    print(f"    Out of stock text: '{text}'")
-                if out_of_stock_text in text:
-            #        print("    -> Produkt bedömd som slutsåld")
+    
+                if any(ot in text for ot in out_of_stock_texts):
                     return "slutsåld"
         except Exception as e:
             print(f"  Fel vid out_of_stock_selector: {e}", flush=True)
-        
+    
         try:
             count = product_elem.locator(out_of_stock_selector).count()
             if count == 0 and site.get("treat_missing_out_of_stock_as_in_stock") is True:
-        #        print("    -> Saknas slutsåld-element, behandlas som i lager pga inställning")
                 return "i lager"
         except Exception as e:
             print(f"  Fel vid kontroll av frånvaro av slutsåld-element: {e}", flush=True)
-
-#    print("    -> Produkt status okänd")
+    
     return "okänd"
 
 def scroll_to_load_all(page, product_selector, use_mouse_wheel=False):
+    print("Startar smart scrollning...", flush=True)
     start = time.time()
-    print(f"Scroll-funktionen startar vid {start:.2f} sek", flush=True)
 
     previous_count = 0
-    max_attempts = 10
+    max_attempts = 3
     attempts = 0
+    max_duration = 4  # max sekunder totalt
+    scroll_start = time.time()
 
-    while attempts < max_attempts:
-        print(f"Innan scrollförsök {attempts + 1}...", flush=True)
+    while attempts < max_attempts and (time.time() - scroll_start) < max_duration:
         try:
             if use_mouse_wheel:
                 page.mouse.wheel(0, 2000)
             else:
                 page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-            print("Scrollning utförd.", flush=True)
         except Exception as e:
             print(f"Fel vid scrollning: {e}", flush=True)
             break
 
-        time.sleep(2)
+        time.sleep(0.5)  # kortare väntan
 
         try:
             current_count = page.locator(product_selector).count()
             print(f"Scrollförsök {attempts + 1}: {current_count} produkter", flush=True)
         except Exception as e:
-            print(f"Fel vid hämtning av produktantal: {e}", flush=True)
+            print(f"Fel vid produktantal: {e}", flush=True)
             break
 
         if current_count == previous_count:
-            print("Inga fler produkter laddades.", flush=True)
+            print("Inga fler produkter laddades – avbryter scroll.", flush=True)
             break
 
         previous_count = current_count
         attempts += 1
 
-    time.sleep(2)
-    end = time.time()
-    print(f"Scroll-funktionen avslutades efter {end - start:.2f} sekunder", flush=True)
+    print(f"Scrollning klar på {time.time() - start:.2f} sekunder\n", flush=True)
 
 import json
 
