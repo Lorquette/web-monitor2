@@ -240,7 +240,7 @@ def scrape_site(site, seen_products, available_products):
     new_available = False
 
     with sync_playwright() as p:
-        browser = p.chromium.launch()
+        browser = p.chromium.launch(headless=True)
         page = browser.new_page(user_agent=USER_AGENT)
         product_page = browser.new_page(user_agent=USER_AGENT)
         
@@ -313,7 +313,17 @@ def scrape_site(site, seen_products, available_products):
                 product_start = time.time()
                 try:
                     product_elem = products.nth(i)
-
+            
+                    name = product_elem.locator(name_selector).text_content(timeout=500).strip()
+                    print(f"Produkt {i+1}/{count}: {name}", flush=True)
+            
+                    skip_keywords = site.get("skip_keywords", False)
+            
+                    if not skip_keywords and not product_matches_keywords(name):
+                        print(f"  Hoppar över produkten då den inte matchar nyckelord.", flush=True)
+                        continue  # 💨 hoppa tidigt!
+            
+                    # 🔽 Dessa körs bara om nyckelord matchar
                     price = None
                     price_selector = site.get("price_selector")
                     if price_selector:
@@ -321,7 +331,7 @@ def scrape_site(site, seen_products, available_products):
                             price = product_elem.locator(price_selector).text_content(timeout=500).strip()
                         except Exception:
                             price = None
-                
+            
                     base_url = site.get("base_url", "")
                     product_link_elem = product_elem.locator(site.get("product_link_selector"))
                     product_href = ""
@@ -329,26 +339,17 @@ def scrape_site(site, seen_products, available_products):
                         product_href = product_link_elem.get_attribute("href")
                     except Exception:
                         product_href = None
-
+            
                     if product_href and not product_href.startswith("http"):
                         full_url = base_url.rstrip("/") + "/" + product_href.lstrip("/")
                     else:
                         full_url = product_href or url
-                    
+            
                     product_link = clean_product_link(full_url)
-
-                    name = product_elem.locator(name_selector).text_content(timeout=500).strip()
-                    print(f"Produkt {i+1}/{count}: {name}", flush=True)
-
+            
                     availability_status = get_availability_status(product_elem, site)
                     print(f"  Tillgänglighet: {availability_status}", flush=True)
-
-                    skip_keywords = site.get("skip_keywords", False)
                     
-                    if not skip_keywords and not product_matches_keywords(name):
-                        print(f"  Hoppar över produkten då den inte matchar nyckelord.", flush=True)
-                        continue
-                        
                     product_hash = hash_string(f"{name}|{product_link}")
                     products_this_run_hashes.append(product_hash)
                     all_products_hashes.add(product_hash)  # Lägg till i global samling
@@ -464,7 +465,7 @@ def get_all_products(site):
     products_list = []
 
     with sync_playwright() as p:
-        browser = p.chromium.launch()
+        browser = p.chromium.launch(headless=True)
         page = browser.new_page(user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
                                            "AppleWebKit/537.36 (KHTML, like Gecko) "
                                            "Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.43")
