@@ -155,20 +155,28 @@ def read_sites_from_sheet():
     sh = gc.open_by_key(SPREADSHEET_ID_S)
     worksheet = sh.worksheet("Sites")
 
-    data = worksheet.get_all_values()  # Hela arket som lista av listor (2D-array)
+    data = worksheet.get_all_values()
 
-    # Första raden innehåller site-namn (kolumnrubriker) från index 1 och framåt
-    site_names = data[0][1:]
-    sites = [{} for _ in site_names]
+    if not data or len(data) < 2:
+        return []
 
-    # Läs rader, sluta när första kolumnen tom (ingen nyckel)
-    for row in data[1:]:
-        key = row[0].strip()
-        if key == "":
-            break  # Sluta läsa fler rader om första kolumnen är tom
+    header = data[0][1:]  # Site-namn (kolumnrubriker efter första kolumnen)
+    rows = data[1:]       # Resterande rader med nycklar och värden
 
-        # För varje site (kolumn från index 1 och framåt)
-        for i, val in enumerate(row[1:]):
-            sites[i][key] = convert_value(val)
+    sites = []
+    for col_index, site_name in enumerate(header):
+        site_data = {"name": site_name}
+        for row in rows:
+            if len(row) < col_index + 2:
+                continue
+            key = row[0].strip()
+            value = row[col_index + 1].strip()
+            if not key or value == "":
+                continue
+            try:
+                site_data[key] = ast.literal_eval(value)
+            except Exception:
+                site_data[key] = convert_value(value)
+        sites.append(site_data)
 
     return sites
