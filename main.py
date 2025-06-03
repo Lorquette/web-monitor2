@@ -261,6 +261,8 @@ def scrape_site(site, seen_products, available_products):
             finally:
                 print(f"Preorder-check klar på {time.time()-start_pre:.2f} sek", flush=True)
 
+        all_products_hashes = set()  # Samla alla produkt-hashar från alla URL:er
+        
         for url in urls_to_scrape:
             if not url:
                 print("⚠️ URL är tom, hoppar över.", flush=True)
@@ -305,6 +307,8 @@ def scrape_site(site, seen_products, available_products):
                 print(f"Fel vid räkning av produkter: {e}", flush=True)
                 continue
 
+            products_this_run_hashes = [] 
+            
             for i in range(count):
                 product_start = time.time()
                 try:
@@ -346,7 +350,9 @@ def scrape_site(site, seen_products, available_products):
                         continue
                         
                     product_hash = hash_string(f"{name}|{product_link}")
-
+                    products_this_run_hashes.append(product_hash)
+                    all_products_hashes.add(product_hash)  # Lägg till i global samling
+                    
                     if product_hash not in seen_products:
               #          print(f"  Ny produkt upptäckt!", flush=True)
                         seen_products[product_hash] = name
@@ -444,7 +450,12 @@ def scrape_site(site, seen_products, available_products):
                     print(f"Fel vid hantering av produkt {i} på {url}: {e}", flush=True)
                 finally:
                     print(f"  Hantering av produkt {i+1} klar på {time.time()-product_start:.2f} sek", flush=True)
-       
+
+        for old_hash in list(available_products.keys()):
+            if old_hash not in all_products_hashes:
+                print(f"Produkten med hash {old_hash} hittades inte längre på någon sida — tas bort.", flush=True)
+                del available_products[old_hash]
+        
         product_page.close()
         browser.close()
 
