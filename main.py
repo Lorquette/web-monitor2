@@ -67,8 +67,10 @@ def send_discord_message(name, url, price, status, site_name):
         "Förbeställningsbar": 0x1E90FF    # Blå
     }
 
+    formatted_name = name.title()
+    
     embed = {
-        "title": name,
+        "title": formatted_name,
         "url": url,
         "color": color_map.get(status, 0x000000),  # Svart fallback
         "fields": [
