@@ -369,7 +369,7 @@ def scrape_site(site, seen_products, available_products):
                             url=product_link or url,
                             price=price,
                             status="Ny produkt",
-                            site_name=site.get("name", url)
+                            site_name=normalize(site.get("name", url))
                         )
                                     
                     # Börja med att kolla om blå knapp finns (preorderknapp)
@@ -436,7 +436,7 @@ def scrape_site(site, seen_products, available_products):
                             url=product_link or url,
                             price=price,
                             status=status_msg,
-                            site_name=site.get("name", url)
+                            site_name=normalize(site.get("name", url))
                         )
                         if GOOGLE_SHEETS_CREDS and GOOGLE_SHEETS_ID:
                             product_data = {
