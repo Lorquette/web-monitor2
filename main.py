@@ -110,6 +110,45 @@ def product_matches_keywords(name):
 
     return any(re.search(keyword, name, re.IGNORECASE) for keyword in KEYWORDS)
 
+def get_urls_to_scrape(site):
+    if "url_pattern" in site and site["url_pattern"]:
+        start = safe_int(site.get("start_page", 1))
+        end = start + safe_int(site.get("max_pages", 1))
+        return [site["url_pattern"].format(page=p) for p in range(start, end)]
+
+    elif "url_pattern_complex" in site and site["url_pattern_complex"]:
+        start = safe_int(site.get("start_page", 1))
+        end = start + safe_int(site.get("max_pages", 1))
+        url_lv1_list = site.get("url_pattern_lv1", [""])
+        if isinstance(url_lv1_list, str):
+            try:
+                url_lv1_list = json.loads(url_lv1_list)
+            except json.JSONDecodeError:
+                print("❌ Fel i url_pattern_lv1-formatet.")
+                return []
+
+        urls = []
+        for lv1 in url_lv1_list:
+            for p in range(start, end):
+                urls.append(site["url_pattern_complex"].format(url_pattern_lv1=lv1, page=p))
+        return urls
+
+    elif "url" in site and site["url"]:
+        return [site["url"]]
+
+    elif "urls" in site and site["urls"]:
+        if isinstance(site["urls"], str):
+            try:
+                return json.loads(site["urls"])
+            except json.JSONDecodeError:
+                print("❌ Fel i 'urls'-formatet.")
+                return []
+        else:
+            return site["urls"]
+
+    else:
+        print("❌ Ingen giltig URL-konfiguration för siten.", flush=True)
+        return []
 
 async def get_availability_status(product_elem, site):
     # 1. Tvingad status (t.ex. Samlarhobby)
@@ -230,161 +269,163 @@ async def scrape_site(site, seen_products, available_products):
     name_selector = site["name_selector"]
     availability_selector = site["availability_selector"]
 
-    url = site.get("url") or (site.get("url_pattern").format(page=site.get("start_page", 1)) if "url_pattern" in site else None)
-    if not url:
-        print("Ingen giltig URL att hämta produkter ifrån.", flush=True)
-        return False, set()
-
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
         main_page = await browser.new_page(user_agent=USER_AGENT)
         preorder_page = await browser.new_page(user_agent=USER_AGENT)
 
-        try:
-            await main_page.goto(url, timeout=10000)
-            await scroll_to_load_all(main_page, product_selector, site.get("use_mouse_wheel", False))
-            products = main_page.locator(product_selector)
-            count = await products.count()
-        except Exception as e:
-            print(f"Fel vid hämtning av produkter: {e}", flush=True)
+        urls_to_scrape = get_urls_to_scrape(site)
+        if not urls_to_scrape:
+            print("❌ Ingen giltig URL att skrapa för denna site.", flush=True)
             await preorder_page.close()
             await main_page.close()
             await browser.close()
             return False, set()
 
-        for i in range(count):
-            product_start = time.time()
+        for url in urls_to_scrape:
+            print(f"Skrapar sida: {url}", flush=True)
             try:
-                product_elem = products.nth(i)
-                name = normalize(await product_elem.locator(name_selector).text_content(timeout=500))
-                print(f"Produkt {i+1}/{count}: {name}", flush=True)
-
-                skip_keywords = site.get("skip_keywords", False)
-
-                if not skip_keywords and not product_matches_keywords(name):
-                    print(f"  Hoppar över produkten då den inte matchar nyckelord.", flush=True)
-                    continue  # 💨 hoppa tidigt!
-
-                price = None
-                price_selector = site.get("price_selector")
-                if price_selector:
-                    try:
-                        price = (await product_elem.locator(price_selector).text_content(timeout=500)).strip()
-                    except Exception:
-                        price = None
-
-                base_url = site.get("base_url", "")
-                product_link_elem = product_elem.locator(site.get("product_link_selector"))
-                product_href = None
-                try:
-                    product_href = await product_link_elem.get_attribute("href")
-                except Exception:
-                    product_href = None
-
-                if product_href and not product_href.startswith("http"):
-                    full_url = base_url.rstrip("/") + "/" + product_href.lstrip("/")
-                else:
-                    full_url = product_href or url
-
-                product_link = clean_product_link(full_url)
-
-                availability_status = get_availability_status(product_elem, site)
-                print(f"  Tillgänglighet: {availability_status}", flush=True)
-
-                product_hash = generate_product_hash(name, site.get("name", ""))
-                all_products_hashes.add(product_hash)
-
-                if product_hash not in seen_products:
-                    seen_products[product_hash] = name
-                    new_seen = True
-                    send_discord_message(
-                        name=name,
-                        url=product_link or url,
-                        price=price,
-                        status="Ny produkt",
-                        site_name=normalize(site.get("name", url))
-                    )
-
-                preorder_selector = site.get("preorder_selector")
-                has_preorder_button = False
-                if preorder_selector:
-                    try:
-                        preorder_elem = product_elem.locator(preorder_selector)
-                        has_preorder_button = (await preorder_elem.count()) > 0
-                    except Exception:
-                        has_preorder_button = False
-
-                if has_preorder_button:
-                    in_stock = True
-                    preorder = True
-                else:
-                    preorder = False
-                    is_not_released = False
-                    if site.get("check_product_page_if_not_released", False):
-                        try:
-                            not_released_elem = product_elem.locator(site["not_released_selector"])
-                            is_not_released = (await not_released_elem.count()) > 0
-                        except Exception:
-                            is_not_released = False
-
-                    if is_not_released:
-                        product_link = None
-                        try:
-                            product_link_tmp = await product_elem.locator(site["product_link_selector"]).get_attribute("href")
-                            if product_link_tmp and product_link_tmp.startswith("/"):
-                                base_url_match = re.match(r"(https?://[^/]+)", url)
-                                base_url = base_url_match.group(1) if base_url_match else ""
-                                product_link = base_url + product_link_tmp
-                            else:
-                                product_link = product_link_tmp
-                        except Exception:
-                            pass
-
-                        if product_link:
-                            product_link = clean_product_link(product_link)
-                            in_stock = await check_if_preorderable(product_link, preorder_page, site)
-                        else:
-                            in_stock = False
-                    else:
-                        in_stock = (availability_status == "i lager")
-
-                was_available = product_hash in available_products
-
-                if in_stock and not was_available:
-                    status_msg = "Förbeställningsbar" if preorder else "Tillbaka i lager"
-                    print(f"  Produkten är {status_msg.lower()}!", flush=True)
-                    print(f"[DEBUG] Skickar hash {product_hash} för produkt '{name}' från '{site.get('name', '')}'", flush=True)
-
-                    available_products[product_hash] = name
-                    seen_products[product_hash] = name
-                    new_available = True
-                    send_discord_message(
-                        name=name,
-                        url=product_link or url,
-                        price=price,
-                        status=status_msg,
-                        site_name=normalize(site.get("name", url))
-                    )
-
-                    if GOOGLE_SHEETS_CREDS and GOOGLE_SHEETS_ID:
-                        product_data = {
-                            'hash': product_hash,
-                            'product_name': name,
-                            'price': price,
-                            'url': product_link or url,
-                            'store': site.get("name", url),
-                            'status': status_msg
-                        }
-                        products_to_update.append(product_data)
-
-                elif not in_stock and was_available:
-                    print(f"  Produkten finns inte längre i lager, tas bort.", flush=True)
-                    del available_products[product_hash]
-
+                await main_page.goto(url, timeout=10000)
+                await scroll_to_load_all(main_page, product_selector, site.get("use_mouse_wheel", False))
+                products = main_page.locator(product_selector)
+                count = await products.count()
             except Exception as e:
-                print(f"Fel vid hantering av produkt {i} på {url}: {e}", flush=True)
-            finally:
-                print(f"  Hantering av produkt {i+1} klar på {time.time()-product_start:.2f} sek", flush=True)
+                print(f"Fel vid hämtning av produkter på {url}: {e}", flush=True)
+                continue  # Gå vidare till nästa URL
+
+            for i in range(count):
+                product_start = time.time()
+                try:
+                    product_elem = products.nth(i)
+                    name = normalize(await product_elem.locator(name_selector).text_content(timeout=500))
+                    print(f"Produkt {i+1}/{count}: {name}", flush=True)
+
+                    skip_keywords = site.get("skip_keywords", False)
+
+                    if not skip_keywords and not product_matches_keywords(name):
+                        print(f"  Hoppar över produkten då den inte matchar nyckelord.", flush=True)
+                        continue  # 💨 hoppa tidigt!
+
+                    price = None
+                    price_selector = site.get("price_selector")
+                    if price_selector:
+                        try:
+                            price = (await product_elem.locator(price_selector).text_content(timeout=500)).strip()
+                        except Exception:
+                            price = None
+
+                    base_url = site.get("base_url", "")
+                    product_link_elem = product_elem.locator(site.get("product_link_selector"))
+                    product_href = None
+                    try:
+                        product_href = await product_link_elem.get_attribute("href")
+                    except Exception:
+                        product_href = None
+
+                    if product_href and not product_href.startswith("http"):
+                        full_url = base_url.rstrip("/") + "/" + product_href.lstrip("/")
+                    else:
+                        full_url = product_href or url
+
+                    product_link = clean_product_link(full_url)
+
+                    availability_status = get_availability_status(product_elem, site)
+                    print(f"  Tillgänglighet: {availability_status}", flush=True)
+
+                    product_hash = generate_product_hash(name, site.get("name", ""))
+                    all_products_hashes.add(product_hash)
+
+                    if product_hash not in seen_products:
+                        seen_products[product_hash] = name
+                        new_seen = True
+                        send_discord_message(
+                            name=name,
+                            url=product_link or url,
+                            price=price,
+                            status="Ny produkt",
+                            site_name=normalize(site.get("name", url))
+                        )
+
+                    preorder_selector = site.get("preorder_selector")
+                    has_preorder_button = False
+                    if preorder_selector:
+                        try:
+                            preorder_elem = product_elem.locator(preorder_selector)
+                            has_preorder_button = (await preorder_elem.count()) > 0
+                        except Exception:
+                            has_preorder_button = False
+
+                    if has_preorder_button:
+                        in_stock = True
+                        preorder = True
+                    else:
+                        preorder = False
+                        is_not_released = False
+                        if site.get("check_product_page_if_not_released", False):
+                            try:
+                                not_released_elem = product_elem.locator(site["not_released_selector"])
+                                is_not_released = (await not_released_elem.count()) > 0
+                            except Exception:
+                                is_not_released = False
+
+                        if is_not_released:
+                            product_link = None
+                            try:
+                                product_link_tmp = await product_elem.locator(site["product_link_selector"]).get_attribute("href")
+                                if product_link_tmp and product_link_tmp.startswith("/"):
+                                    base_url_match = re.match(r"(https?://[^/]+)", url)
+                                    base_url = base_url_match.group(1) if base_url_match else ""
+                                    product_link = base_url + product_link_tmp
+                                else:
+                                    product_link = product_link_tmp
+                            except Exception:
+                                pass
+
+                            if product_link:
+                                product_link = clean_product_link(product_link)
+                                in_stock = await check_if_preorderable(product_link, preorder_page, site)
+                            else:
+                                in_stock = False
+                        else:
+                            in_stock = (availability_status == "i lager")
+
+                    was_available = product_hash in available_products
+
+                    if in_stock and not was_available:
+                        status_msg = "Förbeställningsbar" if preorder else "Tillbaka i lager"
+                        print(f"  Produkten är {status_msg.lower()}!", flush=True)
+                        print(f"[DEBUG] Skickar hash {product_hash} för produkt '{name}' från '{site.get('name', '')}'", flush=True)
+
+                        available_products[product_hash] = name
+                        seen_products[product_hash] = name
+                        new_available = True
+                        send_discord_message(
+                            name=name,
+                            url=product_link or url,
+                            price=price,
+                            status=status_msg,
+                            site_name=normalize(site.get("name", url))
+                        )
+
+                        if GOOGLE_SHEETS_CREDS and GOOGLE_SHEETS_ID:
+                            product_data = {
+                                'hash': product_hash,
+                                'product_name': name,
+                                'price': price,
+                                'url': product_link or url,
+                                'store': site.get("name", url),
+                                'status': status_msg
+                            }
+                            products_to_update.append(product_data)
+
+                    elif not in_stock and was_available:
+                        print(f"  Produkten finns inte längre i lager, tas bort.", flush=True)
+                        del available_products[product_hash]
+
+                except Exception as e:
+                    print(f"Fel vid hantering av produkt {i} på {url}: {e}", flush=True)
+                finally:
+                    print(f"  Hantering av produkt {i+1} klar på {time.time()-product_start:.2f} sek", flush=True)
 
         if GOOGLE_SHEETS_CREDS and GOOGLE_SHEETS_ID and products_to_update:
             google_sheets.update_or_append_rows(products_to_update)
