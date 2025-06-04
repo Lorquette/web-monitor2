@@ -2,7 +2,7 @@ import asyncio
 import os
 import json
 import hashlib
-from playwright.sync_api import sync_playwright
+from playwright.async_api import async_playwright
 import re
 import time
 import requests
