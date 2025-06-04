@@ -320,7 +320,7 @@ def scrape_site(site, seen_products, available_products):
                 try:
                     product_elem = products.nth(i)
             
-                    name = product_elem.locator(name_selector).text_content(timeout=500).strip()
+                    name = normalize(product_elem.locator(name_selector).text_content(timeout=500))
                     print(f"Produkt {i+1}/{count}: {name}", flush=True)
             
                     skip_keywords = site.get("skip_keywords", False)
@@ -496,7 +496,7 @@ def get_all_products(site):
         for i in range(count):
             try:
                 product_elem = products.nth(i)
-                name = product_elem.locator(name_selector).text_content(timeout=2000).strip()
+                name = normalize(product_elem.locator(name_selector).text_content(timeout=2000))
                 
                 # Hämta availability-text från span eller direkt
                 availability_text = ""
