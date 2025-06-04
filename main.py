@@ -23,7 +23,7 @@ KEYWORDS = [
 ]
 
 BLOCKED_KEYWORDS = [
-    "Deck Box", "Binder", "Pärm", "Portfolio", "Playmat", "Stacking Tin", "Mugg", "Ryggsäck", "Stort kort"
+    "Deck Box", "Binder", "Pärm", "Portfolio", "Playmat", "Stacking Tin", "Mugg", "Ryggsäck", "Stort kort", "Ultra Pro"
 ]
 
 def load_json(file_path):
