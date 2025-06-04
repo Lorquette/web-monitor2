@@ -40,6 +40,12 @@ def save_json(file_path, data):
 def hash_string(s):
     return hashlib.sha256(s.encode("utf-8")).hexdigest()
 
+def normalize(text):
+    return ' '.join(text.lower().strip().split())
+
+def generate_product_hash(name, site_name):
+    return hash_string(f"{normalize(site_name)}|{normalize(name)}")
+
 def clean_product_link(url):
     parsed = urlparse(url)
     return urlunparse((parsed.scheme, parsed.netloc, parsed.path, '', '', ''))
@@ -350,7 +356,7 @@ def scrape_site(site, seen_products, available_products):
                     availability_status = get_availability_status(product_elem, site)
                     print(f"  Tillgänglighet: {availability_status}", flush=True)
                     
-                    product_hash = hash_string(f"{name}|{product_link}")
+                    product_hash = generate_product_hash(name, site.get("name", ""))
                     products_this_run_hashes.append(product_hash)
                     all_products_hashes.add(product_hash)  # Lägg till i global samling
                     
