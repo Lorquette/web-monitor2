@@ -448,7 +448,8 @@ def scrape_site(site, seen_products, available_products):
                                 'status': status_msg
                             }
                             google_sheets.update_or_append_row(product_data)
-
+                            time.sleep(1.2)  # Begränsa skrivhastighet till Google Sheets (max ~50/min)
+                            
                     elif not in_stock and was_available:
                         print(f"  Produkten finns inte längre i lager, tas bort.", flush=True)
                         del available_products[product_hash]
