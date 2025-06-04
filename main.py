@@ -267,7 +267,6 @@ async def scrape_site(site, seen_products, available_products):
 
     product_selector = site["product_selector"]
     name_selector = site["name_selector"]
-    availability_selector = site["availability_selector"]
 
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
@@ -329,7 +328,7 @@ async def scrape_site(site, seen_products, available_products):
 
                     product_link = clean_product_link(full_url)
 
-                    availability_status = get_availability_status(product_elem, site)
+                    availability_status = await get_availability_status(product_elem, site)
                     print(f"  Tillgänglighet: {availability_status}", flush=True)
 
                     product_hash = generate_product_hash(name, site.get("name", ""))
@@ -338,7 +337,7 @@ async def scrape_site(site, seen_products, available_products):
                     if product_hash not in seen_products:
                         seen_products[product_hash] = name
                         new_seen = True
-                        send_discord_message(
+                        await send_discord_message(
                             name=name,
                             url=product_link or url,
                             price=price,
@@ -399,7 +398,7 @@ async def scrape_site(site, seen_products, available_products):
                         available_products[product_hash] = name
                         seen_products[product_hash] = name
                         new_available = True
-                        send_discord_message(
+                        await send_discord_message(
                             name=name,
                             url=product_link or url,
                             price=price,
@@ -439,7 +438,6 @@ async def scrape_site(site, seen_products, available_products):
 async def get_all_products(site):
     product_selector = site["product_selector"]
     name_selector = site["name_selector"]
-    availability_selector = site["availability_selector"]
 
     products_list = []
 
