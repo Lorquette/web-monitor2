@@ -428,6 +428,8 @@ def scrape_site(site, seen_products, available_products):
                             status_msg = "Tillbaka i lager"
                     
                         print(f"  Produkten är {status_msg.lower()}!", flush=True)
+                        print(f"[DEBUG] Skickar hash {product_hash} för produkt '{name}' från '{site_name}'", flush=True)
+                        
                         available_products[product_hash] = name
                         seen_products[product_hash] = name
                         new_available = True
