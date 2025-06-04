@@ -25,6 +25,7 @@ if not SPREADSHEET_ID:
 
 SHEET_NAME = 'Blad1'  # Ändra till ditt ark-namn om det behövs
 
+
 def get_all_hashes():
     """
     Läser in alla hashar från kolumn G i Google Sheets och returnerar som lista.
@@ -35,6 +36,7 @@ def get_all_hashes():
     values = result.get('values', [])
     hashes = [row[0] for row in values if row]  # Säkerställ att raden inte är tom
     return hashes
+
 
 def update_row(row_index, row_data):
     """
@@ -53,13 +55,14 @@ def update_row(row_index, row_data):
     response = request.execute()
     return response
 
+
 def append_row(row_data):
     """
     Lägg till en rad längst ner i Google Sheet utan att skriva över befintliga rader.
     Räknar ut nästa lediga rad genom att läsa antal fyllda rader i kolumn A.
     """
     sheet = service.spreadsheets()
-    
+
     # Läs in alla värden i kolumn A (från rad 1 och neråt)
     result = sheet.values().get(spreadsheetId=SPREADSHEET_ID, range=f'{SHEET_NAME}!A:A').execute()
     values = result.get('values', [])
@@ -80,40 +83,73 @@ def append_row(row_data):
     response = request.execute()
     return response
 
-def update_or_append_row(product_data):
+
+def update_or_append_rows(products_data):
     """
-    Uppdaterar en rad med hash i Google Sheets om den finns,
-    annars lägger till en ny rad.
+    Batch-uppdatera eller lägg till flera produkter i Google Sheets.
+    products_data: lista av dict med produkternas data, varje dict måste ha 'hash' och övriga fält.
     """
-    required_fields = ['product_name', 'price', 'url', 'store']
-    for field in required_fields:
-        if not product_data.get(field):
-            print(f"[!] Fält saknas i produktdata: {field}. Skipping Sheets update.")
-            return
+    required_fields = ['product_name', 'price', 'url', 'store', 'hash']
+    # Validera alla produkter först
+    for product_data in products_data:
+        for field in required_fields:
+            if not product_data.get(field):
+                print(f"[!] Fält saknas i produktdata: {field}. Skipping produkt.")
+                return
 
     hashes = get_all_hashes()
 
-    product_hash = product_data.get('hash')
-    if not product_hash:
-        raise ValueError("product_data måste innehålla 'hash'")
-
+    sheet = service.spreadsheets()
     now_str = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
 
-    row_data = [
-        product_data['product_name'],
-        product_data['price'],
-        product_data['store'],
-        product_data.get('status', ''),
-        product_data['url'],
-        now_str,
-        product_hash,
-    ]
+    # Vi ska bygga två listor:
+    # 1. Uppdatera befintliga rader (row_index -> data)
+    # 2. Lägg till nya rader i slutet
+    updates = []
+    appends = []
 
-    if product_hash in hashes:
-        row_index = hashes.index(product_hash) + 2
-        return update_row(row_index, row_data)
-    else:
-        return append_row(row_data)
+    for product_data in products_data:
+        product_hash = product_data['hash']
+        row_data = [
+            product_data['product_name'],
+            product_data['price'],
+            product_data['store'],
+            product_data.get('status', ''),
+            product_data['url'],
+            now_str,
+            product_hash,
+        ]
+        if product_hash in hashes:
+            row_index = hashes.index(product_hash) + 2  # +2 pga header + 1-baserat index
+            updates.append((row_index, row_data))
+        else:
+            appends.append(row_data)
+
+    # Gör batch-uppdateringar för befintliga rader
+    if updates:
+        data = []
+        for row_index, row_data in updates:
+            data.append({
+                'range': f'{SHEET_NAME}!A{row_index}',
+                'values': [row_data]
+            })
+        body = {
+            'valueInputOption': 'RAW',
+            'data': data
+        }
+        response = sheet.values().batchUpdate(spreadsheetId=SPREADSHEET_ID, body=body).execute()
+        print(f"[INFO] Uppdaterade {len(updates)} rader i Google Sheets.")
+
+    # Lägg till nya rader i slutet
+    if appends:
+        response = sheet.values().append(
+            spreadsheetId=SPREADSHEET_ID,
+            range=f'{SHEET_NAME}!A:A',
+            valueInputOption='RAW',
+            insertDataOption='INSERT_ROWS',
+            body={'values': appends}
+        ).execute()
+        print(f"[INFO] La till {len(appends)} nya rader i Google Sheets.")
 
 def delete_rows_with_missing_hashes(available_products):
     """
@@ -121,7 +157,7 @@ def delete_rows_with_missing_hashes(available_products):
     available_products är en dict med hashar som nycklar (från available_products.json).
     """
     sheet = service.spreadsheets()
-    
+
     # Läs in hela kolumn G, men också radnummer för att kunna ta bort rätt rad
     range_ = f'{SHEET_NAME}!G2:G'
     result = sheet.values().get(spreadsheetId=SPREADSHEET_ID, range=range_).execute()
@@ -159,6 +195,7 @@ def delete_rows_with_missing_hashes(available_products):
         response = service.spreadsheets().batchUpdate(spreadsheetId=SPREADSHEET_ID, body=request_body).execute()
         print(f"[INFO] Tog bort rad {row_index} i Google Sheets.")
 
+
 def convert_value(val):
     """Försök konvertera värdet till rätt typ."""
     if isinstance(val, bool):
@@ -178,6 +215,7 @@ def convert_value(val):
         except:
             return val
     return val
+
 
 def read_sites_from_sheet():
     SERVICE_ACCOUNT_INFO = os.getenv("GOOGLE_SHEETS_CREDS")
@@ -224,4 +262,3 @@ def read_sites_from_sheet():
             print(f"DEBUG WARNING: Site index {i} saknar nycklar: {saknas}")
 
     return sites
-
