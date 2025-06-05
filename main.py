@@ -419,8 +419,12 @@ async def scrape_site(site, seen_products, available_products):
                             products_to_update.append(product_data)
 
                     elif not in_stock and was_available:
-                        print(f"  Produkten finns inte längre i lager, tas bort.", flush=True)
-                        del available_products[product_hash]
+                        # Only remove if availability_status == "slutsåld"
+                        if availability_status == "slutsåld":
+                            print(f"  Produkten finns inte längre i lager, tas bort.", flush=True)
+                            del available_products[product_hash]
+                        else:
+                            print(f"  Produkten saknas på sidan men är inte markerad som slutsåld, tas INTE bort.", flush=True)
 
                 except Exception as e:
                     print(f"Fel vid hantering av produkt {i} på {url}: {e}", flush=True)
