@@ -337,12 +337,19 @@ async def scrape_url(url, site, semaphore):
                                     in_stock = False
                             else:
                                 in_stock = (availability_status == "i lager")
+                        if in_stock:
+                            status = "Tillbaka i lager"
+                        elif preorder:
+                            status = "Förbeställningsbar"
+                        else:
+                            status = availability_status
+                        
                         products_out.append({
                             "hash": product_hash,
                             "name": name,
                             "url": product_link or url,
                             "price": price,
-                            "status": ("Förbeställningsbar" if preorder else ("Tillbaka i lager" if in_stock else availability_status)),
+                            "status": status,
                             "site_name": normalize(site.get("name", url))
                         })
                     except Exception as e:
