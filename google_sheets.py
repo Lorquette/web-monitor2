@@ -300,6 +300,12 @@ def read_sites_from_sheet():
     # Validera att viktiga nycklar finns i varje site
     viktiga_nycklar = ['name', 'product_selector']
     for i, site in enumerate(sites):
+    if site.get("type", "browser") == "api":
+        # For API sites, only check for 'name'
+        if "name" not in site:
+            print(f"DEBUG WARNING: API site index {i} saknar namn.")
+    else:
+        viktiga_nycklar = ['name', 'product_selector']
         saknas = [k for k in viktiga_nycklar if k not in site]
         if saknas:
             print(f"DEBUG WARNING: Site index {i} saknar nycklar: {saknas}")
