@@ -9,6 +9,7 @@ import time
 import requests
 from urllib.parse import urlparse, urlunparse
 import google_sheets
+from api_scraper import get_api_products  # <-- new import!
 
 # --- Config and environment variables ---
 DATA_DIR = "data"
@@ -17,8 +18,8 @@ AVAILABLE_PRODUCTS_FILE = os.path.join(DATA_DIR, "available_products.json")
 DISCORD_WEBHOOK = os.getenv("DISCORD_WEBHOOK")
 
 GOOGLE_SHEETS_CREDS = os.getenv("GOOGLE_SHEETS_CREDS")
-GOOGLE_SHEETS_ID = os.getenv("GOOGLE_SHEETS_ID")          # For product output
-GOOGLE_SHEETS_ID_S = os.getenv("GOOGLE_SHEETS_ID_S")      # For site config/input (used via google_sheets.read_sites_from_sheet)
+GOOGLE_SHEETS_ID = os.getenv("GOOGLE_SHEETS_ID")
+GOOGLE_SHEETS_ID_S = os.getenv("GOOGLE_SHEETS_ID_S")
 
 USER_AGENT = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -26,9 +27,9 @@ USER_AGENT = (
     "Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.43"
 )
 
-PARALLEL_URLS_PER_SITE = 5      # Limit for parallel URLs per site
-GLOBAL_SCRIPT_TIMEOUT = 1800    # 30 minutes
-SITE_TIMEOUT = 600              # 10 minutes per site scrape
+PARALLEL_URLS_PER_SITE = 5
+GLOBAL_SCRIPT_TIMEOUT = 1800
+SITE_TIMEOUT = 600
 
 KEYWORDS = [
     "Pokémon", "Pokemon", "Destined Rivals", "Prismatic Evolutions",
@@ -87,9 +88,9 @@ async def send_discord_message(name, url, price, status, site_name):
         return
 
     color_map = {
-        "Ny produkt": 0xFFFF00,           # Gul
-        "Tillbaka i lager": 0x00FF00,     # Grön
-        "Förbeställningsbar": 0x1E90FF    # Blå
+        "Ny produkt": 0xFFFF00,
+        "Tillbaka i lager": 0x00FF00,
+        "Förbeställningsbar": 0x1E90FF
     }
     formatted_name = name.title()
     formatted_site = capitalize_first(site_name)
@@ -348,6 +349,10 @@ async def scrape_url(url, site, semaphore):
     return products_out
 
 async def scrape_site(site):
+    if site.get("type", "browser").lower() == "api":
+        # Use API-based scraping
+        return get_api_products(site)
+    # Browser-based scraping as before
     urls = get_urls_to_scrape(site)
     semaphore = asyncio.Semaphore(site.get("max_parallel_urls", PARALLEL_URLS_PER_SITE))
     url_tasks = [
