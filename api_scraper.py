@@ -1,6 +1,19 @@
 import requests
 import hashlib
 from urllib.parse import urljoin
+import re
+
+def slugify(text):
+    text = text.lower()
+    replacements = {
+        "å": "a", "ä": "a", "ö": "o",
+        "Å": "a", "Ä": "a", "Ö": "o",
+    }
+    for search, replace in replacements.items():
+        text = text.replace(search, replace)
+    text = re.sub(r"[^\w\s-]", "", text)
+    text = re.sub(r"\s+", "-", text)
+    return text
 
 def hash_product(prod, keys):
     h = hashlib.sha256()
@@ -49,9 +62,18 @@ def get_api_products(site_conf):
             product_list = data.get(api_items_key, [])
             for prod in product_list:
                 name = deep_get(prod, title_key) or ""
+                # --- START: Webhallen-specific URL construction ---
+                prod_id = deep_get(prod, id_key)
                 prod_url = deep_get(prod, url_key) or ""
-                if not prod_url.startswith("http"):
-                    prod_url = urljoin(base_url, prod_url)
+                # If url is not a full url, construct from id and name
+                if site_conf.get('name', '').lower() == 'webhallen' or 'webhallen.com' in base_url:
+                    slug = slugify(name)
+                    prod_url = f"{base_url.rstrip('/')}/se/product/{prod_id}-{slug}"
+                else:
+                    if not prod_url.startswith("http"):
+                        prod_url = urljoin(base_url, prod_url)
+                # --- END: Webhallen-specific URL construction ---
+
                 price = deep_get(prod, price_key)
                 if isinstance(price, dict):
                     price = price.get("price", None)
