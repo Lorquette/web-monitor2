@@ -87,19 +87,25 @@ async def send_discord_message(name, url, price, status, site_name):
         print("No Discord webhook set in environment variable.", flush=True)
         return
 
+    # Defensive: ensure no required field is empty
+    if not name or not url or not status:
+        print(f"[DISCORD] Skipping message due to missing required field: name={name}, url={url}, status={status}")
+        return
+
+    price_str = str(price) if price else "Okänt"
     color_map = {
         "Ny produkt": 0xFFFF00,
         "Tillbaka i lager": 0x00FF00,
         "Förbeställningsbar": 0x1E90FF
     }
     formatted_name = name.title()
-    formatted_site = capitalize_first(site_name)
+    formatted_site = capitalize_first(site_name) if site_name else "Okänd butik"
     embed = {
         "title": formatted_name,
         "url": url,
         "color": color_map.get(status, 0x000000),
         "fields": [
-            {"name": "Pris", "value": price or "Okänt", "inline": True},
+            {"name": "Pris", "value": price_str, "inline": True},
             {"name": "Status", "value": status, "inline": True},
             {"name": "Webbplats", "value": formatted_site, "inline": False},
         ],
