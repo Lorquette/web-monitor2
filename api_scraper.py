@@ -1,5 +1,6 @@
 import requests
 import hashlib
+from urllib.parse import urljoin
 
 def hash_product(prod, keys):
     h = hashlib.sha256()
@@ -34,7 +35,7 @@ def get_api_products(site_conf):
     stock_key = site_conf.get("api_stock_key", "stock.web")
     preorder_key = site_conf.get("api_preorder_key", "isPreOrderable")
     id_key = site_conf.get("api_id_key", "id")
-    site_name = site_conf.get("name", "API_SITE")
+    site_name = site_conf.get("name", "Webhallen")
     api_items_key = site_conf.get("api_items_key", "products")
     base_url = site_conf.get("api_base_url", "https://www.webhallen.com/")
 
@@ -50,8 +51,10 @@ def get_api_products(site_conf):
                 name = deep_get(prod, title_key) or ""
                 prod_url = deep_get(prod, url_key) or ""
                 if not prod_url.startswith("http"):
-                    prod_url = base_url.rstrip("/") + "/" + prod_url.lstrip("/")
+                    prod_url = urljoin(base_url, prod_url)
                 price = deep_get(prod, price_key)
+                if isinstance(price, dict):
+                    price = price.get("price", None)
                 if isinstance(price, (int, float)):
                     price = str(int(price))
                 if price is None:
@@ -79,10 +82,8 @@ def get_api_products(site_conf):
                 })
         except Exception as e:
             print(f"[API ERROR] Failed to fetch {url}: {e}")
-            
     valid_products = []
     for p in products:
-        # Defensive: ensure required fields are present and non-empty
         if not p["name"] or not p["url"] or not p["status"]:
             print(f"[API WARNING] Skipping product with missing field: {p}")
             continue
