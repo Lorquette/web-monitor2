@@ -287,6 +287,8 @@ async def scrape_url(url, site, semaphore):
                                 price = (await product_elem.locator(price_selector).text_content(timeout=3500)).strip()
                             except Exception:
                                 price = None
+                        if not price:
+                            price = "Okänt"
                         product_link_elem = product_elem.locator(site.get("product_link_selector"))
                         product_href = None
                         try:
