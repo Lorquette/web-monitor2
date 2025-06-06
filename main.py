@@ -29,7 +29,7 @@ USER_AGENT = (
 
 PARALLEL_URLS_PER_SITE = 5
 GLOBAL_SCRIPT_TIMEOUT = 1800
-SITE_TIMEOUT = 600
+SITE_TIMEOUT = 1000
 
 KEYWORDS = [
     "Pokémon", "Pokemon", "Destined Rivals", "Prismatic Evolutions",
