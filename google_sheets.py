@@ -37,6 +37,49 @@ def get_all_hashes():
     hashes = [row[0] for row in values if row]  # Säkerställ att raden inte är tom
     return hashes
 
+def get_all_hashes_with_row_indices():
+    """
+    Returns a list of (row_index, hash) for all hashes in the sheet.
+    """
+    sheet = service.spreadsheets()
+    range_ = f'{SHEET_NAME}!G2:G'
+    result = sheet.values().get(spreadsheetId=SPREADSHEET_ID, range=range_).execute()
+    values = result.get('values', [])
+    # row_index is 1-based, so +2
+    return [(i + 2, row[0]) for i, row in enumerate(values) if row]
+
+def deduplicate_sheet_hashes():
+    """
+    Removes duplicate rows for the same hash in Google Sheets, keeping only the first occurrence.
+    """
+    all_hashes = {}
+    duplicates = []
+    for row_index, hash_val in get_all_hashes_with_row_indices():
+        if hash_val in all_hashes:
+            duplicates.append(row_index)
+        else:
+            all_hashes[hash_val] = row_index
+    if not duplicates:
+        print("[INFO] No duplicate hashes found in Google Sheets.")
+        return
+    print(f"[INFO] Removing {len(duplicates)} duplicate rows from Google Sheets: {duplicates}")
+    # Sort in reverse so row numbers don't shift
+    duplicates.sort(reverse=True)
+    for row_index in duplicates:
+        request_body = {
+            "requests": [{
+                "deleteDimension": {
+                    "range": {
+                        "sheetId": 0,  # adjust if needed!
+                        "dimension": "ROWS",
+                        "startIndex": row_index - 1,
+                        "endIndex": row_index
+                    }
+                }
+            }]
+        }
+        service.spreadsheets().batchUpdate(spreadsheetId=SPREADSHEET_ID, body=request_body).execute()
+        time.sleep(1)  # To avoid quota
 
 def update_row(row_index, row_data):
     """
