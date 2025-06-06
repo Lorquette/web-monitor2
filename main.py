@@ -431,6 +431,7 @@ async def main():
     save_json(SEEN_PRODUCTS_FILE, seen_products)
     save_json(AVAILABLE_PRODUCTS_FILE, available_products)
     if GOOGLE_SHEETS_CREDS and GOOGLE_SHEETS_ID and products_to_update_google:
+        google_sheets.deduplicate_sheet_hashes()
         google_sheets.update_or_append_rows(products_to_update_google)
         google_sheets.delete_rows_with_missing_hashes(available_products)
     print("\n--- Alla produkter på första siten ---", flush=True)
