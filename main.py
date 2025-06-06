@@ -67,7 +67,9 @@ def capitalize_first(text):
 def title_case(text):
     if not text:
         return ""
-    return re.sub(r"([a-zA-ZåäöÅÄÖ0-9]+)", lambda m: m.group(0).capitalize(), text)
+    s = text.title()
+    s = re.sub(r"(?<=\w)'S\b", "'s", s)  # Collector'S -> Collector's
+    return s
 
 def generate_product_hash(name, site_name):
     return hash_string(f"{normalize(site_name)}|{normalize(name)}")
