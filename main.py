@@ -248,7 +248,7 @@ async def check_if_preorderable(product_url, product_page, site):
     print(f"Startar preorder-check: {product_url}", flush=True)
     start_pre = time.time()
     try:
-        await product_page.goto(product_url, timeout=5000, wait_until="domcontentloaded")
+        await product_page.goto(product_url, timeout=10000, wait_until="domcontentloaded")
         print(f"Sida laddad på {time.time()-start_pre:.2f} sek", flush=True)
         count = await product_page.locator(site["buy_button_selector"]).count()
         print(f"Antal buy-buttons: {count}", flush=True)
@@ -277,14 +277,14 @@ async def scrape_url(url, site, semaphore):
                 for i in range(count):
                     try:
                         product_elem = products.nth(i)
-                        name = normalize(await product_elem.locator(name_selector).text_content(timeout=3500))
+                        name = normalize(await product_elem.locator(name_selector).text_content(timeout=15500))
                         if not site.get("skip_keywords", False) and not product_matches_keywords(name):
                             continue
                         price = None
                         price_selector = site.get("price_selector")
                         if price_selector:
                             try:
-                                price = (await product_elem.locator(price_selector).text_content(timeout=3500)).strip()
+                                price = (await product_elem.locator(price_selector).text_content(timeout=15500)).strip()
                             except Exception:
                                 price = None
                         if not price:
