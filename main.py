@@ -215,9 +215,9 @@ async def scroll_to_load_all(page, product_selector, use_mouse_wheel=False):
     print("Startar smart scrollning...", flush=True)
     start = time.time()
     previous_count = 0
-    max_attempts = 3
+    max_attempts = 6  # <-- was 3, increase for more robustness
     attempts = 0
-    max_duration = 4
+    max_duration = 12  # <-- was 4, increase for more robustness
     scroll_start = time.time()
     while attempts < max_attempts and (time.time() - scroll_start) < max_duration:
         try:
@@ -228,7 +228,7 @@ async def scroll_to_load_all(page, product_selector, use_mouse_wheel=False):
         except Exception as e:
             print(f"Fel vid scrollning: {e}", flush=True)
             break
-        await asyncio.sleep(0.5)
+        await asyncio.sleep(1.2)  # <-- was 0.5, give more time for loading
         try:
             current_count = await page.locator(product_selector).count()
             print(f"Scrollförsök {attempts + 1}: {current_count} produkter", flush=True)
@@ -275,14 +275,14 @@ async def scrape_url(url, site, semaphore):
                 for i in range(count):
                     try:
                         product_elem = products.nth(i)
-                        name = normalize(await product_elem.locator(name_selector).text_content(timeout=1500))
+                        name = normalize(await product_elem.locator(name_selector).text_content(timeout=3500))
                         if not site.get("skip_keywords", False) and not product_matches_keywords(name):
                             continue
                         price = None
                         price_selector = site.get("price_selector")
                         if price_selector:
                             try:
-                                price = (await product_elem.locator(price_selector).text_content(timeout=700)).strip()
+                                price = (await product_elem.locator(price_selector).text_content(timeout=3500)).strip()
                             except Exception:
                                 price = None
                         product_link_elem = product_elem.locator(site.get("product_link_selector"))
