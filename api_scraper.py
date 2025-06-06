@@ -79,4 +79,16 @@ def get_api_products(site_conf):
                 })
         except Exception as e:
             print(f"[API ERROR] Failed to fetch {url}: {e}")
-    return products
+            
+    valid_products = []
+    for p in products:
+        # Defensive: ensure required fields are present and non-empty
+        if not p["name"] or not p["url"] or not p["status"]:
+            print(f"[API WARNING] Skipping product with missing field: {p}")
+            continue
+        if not p["price"]:
+            p["price"] = "Okänt"
+        if not p["site_name"]:
+            p["site_name"] = site_name
+        valid_products.append(p)
+    return valid_products
