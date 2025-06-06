@@ -431,7 +431,9 @@ async def main():
                 "site_name": prod["site_name"]
             })
             available_products[prod_hash] = prod["name"]
-        if GOOGLE_SHEETS_CREDS and GOOGLE_SHEETS_ID:
+        if GOOGLE_SHEETS_CREDS and GOOGLE_SHEETS_ID and prod["status"].lower() in [
+        "i lager", "tillbaka i lager", "förbeställningsbar"
+        ]:
             products_to_update_google.append({
                 'hash': prod_hash,
                 'product_name': title_case(prod["name"]),
