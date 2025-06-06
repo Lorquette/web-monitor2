@@ -4,14 +4,14 @@ import os
 import json
 import hashlib
 from playwright.async_api import async_playwright, TimeoutError as PlaywrightTimeoutError
+from playwright_stealth import stealth_async
 import re
 import time
 import requests
 from urllib.parse import urlparse, urlunparse
 import google_sheets
-from api_scraper import get_api_products  # <-- new import!
+from api_scraper import get_api_products
 
-# --- Config and environment variables ---
 DATA_DIR = "data"
 SEEN_PRODUCTS_FILE = os.path.join(DATA_DIR, "seen_products.json")
 AVAILABLE_PRODUCTS_FILE = os.path.join(DATA_DIR, "available_products.json")
@@ -27,7 +27,7 @@ USER_AGENT = (
     "Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.43"
 )
 
-PARALLEL_URLS_PER_SITE = 25
+PARALLEL_URLS_PER_SITE = 3  # Lowered: avoid bot detection
 GLOBAL_SCRIPT_TIMEOUT = 1800
 SITE_TIMEOUT = 1000
 
@@ -89,7 +89,6 @@ async def send_discord_message(name, url, price, status, site_name):
         print("No Discord webhook set in environment variable.", flush=True)
         return
 
-    # Defensive: ensure no required field is empty
     if not name or not url or not status:
         print(f"[DISCORD] Skipping message due to missing required field: name={name}, url={url}, status={status}")
         return
@@ -217,9 +216,9 @@ async def scroll_to_load_all(page, product_selector, use_mouse_wheel=False):
     print("Startar smart scrollning...", flush=True)
     start = time.time()
     previous_count = 0
-    max_attempts = 6  # <-- was 3, increase for more robustness
+    max_attempts = 8  # more attempts for robustness
     attempts = 0
-    max_duration = 12  # <-- was 4, increase for more robustness
+    max_duration = 20  # up to 20s
     scroll_start = time.time()
     while attempts < max_attempts and (time.time() - scroll_start) < max_duration:
         try:
@@ -230,7 +229,7 @@ async def scroll_to_load_all(page, product_selector, use_mouse_wheel=False):
         except Exception as e:
             print(f"Fel vid scrollning: {e}", flush=True)
             break
-        await asyncio.sleep(1.2)  # <-- was 0.5, give more time for loading
+        await asyncio.sleep(1.5)
         try:
             current_count = await page.locator(product_selector).count()
             print(f"Scrollförsök {attempts + 1}: {current_count} produkter", flush=True)
@@ -259,135 +258,107 @@ async def check_if_preorderable(product_url, product_page, site):
     finally:
         print(f"Preorder-check klar på {time.time()-start_pre:.2f} sek", flush=True)
 
-async def scrape_url(url, site, semaphore):
+async def scrape_url(url, site, browser):
     products_out = []
     product_selector = site["product_selector"]
     name_selector = site["name_selector"]
     base_url = site.get("base_url", "")
-    async with semaphore:
+    try:
+        main_page = await browser.new_page(user_agent=USER_AGENT)
+        preorder_page = await browser.new_page(user_agent=USER_AGENT)
+        await stealth_async(main_page)
+        await stealth_async(preorder_page)
         try:
-            async with async_playwright() as p:
-                browser = await p.chromium.launch(headless=True)
-                main_page = await browser.new_page(user_agent=USER_AGENT)
-                preorder_page = await browser.new_page(user_agent=USER_AGENT)
-                try:
-                    await main_page.goto(url, timeout=30000, wait_until="networkidle")
-                    await main_page.wait_for_selector(product_selector, timeout=15000)
-                except PlaywrightTimeoutError:
-                    print(f"[TIMEOUT] Page or products not loaded for: {url}")
-                    return []
-                await scroll_to_load_all(main_page, product_selector, site.get("use_mouse_wheel", False))
-                products = main_page.locator(product_selector)
-                count = await products.count()
-                if count == 0:
-                    print(f"[WARNING] 0 products found for selector '{product_selector}' on {url}")
-                    # Optionally save page content for debug:
-                    content = await main_page.content()
-                    with open("debug_zero_products.html", "w", encoding="utf-8") as f:
-                        f.write(content)
-                for i in range(count):
-                    try:
-                        product_elem = products.nth(i)
-                        name = normalize(await product_elem.locator(name_selector).text_content(timeout=15500))
-                        if not site.get("skip_keywords", False) and not product_matches_keywords(name):
-                            continue
-                        price = None
-                        price_selector = site.get("price_selector")
-                        if price_selector:
-                            try:
-                                price = (await product_elem.locator(price_selector).text_content(timeout=15500)).strip()
-                            except Exception:
-                                price = None
-                        if not price:
-                            price = "Okänt"
-                        product_link_elem = product_elem.locator(site.get("product_link_selector"))
-                        product_href = None
-                        try:
-                            product_href = await product_link_elem.get_attribute("href")
-                        except Exception:
-                            product_href = None
-                        if product_href and not product_href.startswith("http"):
-                            full_url = base_url.rstrip("/") + "/" + product_href.lstrip("/")
-                        else:
-                            full_url = product_href or url
-                        product_link = clean_product_link(full_url)
-                        availability_status = await get_availability_status(product_elem, site)
-                        product_hash = generate_product_hash(name, site.get("name", ""))
-                        preorder_selector = site.get("preorder_selector")
-                        has_preorder_button = False
-                        if preorder_selector:
-                            try:
-                                preorder_elem = product_elem.locator(preorder_selector)
-                                has_preorder_button = (await preorder_elem.count()) > 0
-                            except Exception:
-                                has_preorder_button = False
-                        if has_preorder_button:
-                            in_stock = True
-                            preorder = True
-                        else:
-                            preorder = False
-                            is_not_released = False
-                            if site.get("check_product_page_if_not_released", False):
-                                try:
-                                    not_released_elem = product_elem.locator(site["not_released_selector"])
-                                    is_not_released = (await not_released_elem.count()) > 0
-                                except Exception:
-                                    is_not_released = False
-                            if is_not_released:
-                                tmp_link = None
-                                try:
-                                    tmp_link = await product_elem.locator(site["product_link_selector"]).get_attribute("href")
-                                    if tmp_link and tmp_link.startswith("/"):
-                                        base_url_match = re.match(r"(https?://[^/]+)", url)
-                                        base_url2 = base_url_match.group(1) if base_url_match else ""
-                                        tmp_link = base_url2 + tmp_link
-                                except Exception:
-                                    pass
-                                if tmp_link:
-                                    clean_link = clean_product_link(tmp_link)
-                                    in_stock = await check_if_preorderable(clean_link, preorder_page, site)
-                                else:
-                                    in_stock = False
-                            else:
-                                in_stock = (availability_status == "i lager")
-                        # After all in-stock and preorder checks:
-                        if availability_status == "i lager":
-                            status = "Tillbaka i lager"
-                        elif has_preorder_button:
-                            status = "Förbeställningsbar"
-                        else:
-                            status = availability_status
-                        
-                        products_out.append({
-                            "hash": product_hash,
-                            "name": name,
-                            "url": product_link or url,
-                            "price": price,
-                            "status": status,
-                            "site_name": normalize(site.get("name", url))
-                        })
-                    except Exception as e:
-                        print(f"Fel vid hantering av produkt {i} på {url}: {e}", flush=True)
-                await preorder_page.close()
-                await main_page.close()
-                await browser.close()
+            await main_page.goto(url, timeout=30000, wait_until="networkidle")
+            await main_page.wait_for_selector(product_selector, timeout=20000)
         except PlaywrightTimeoutError:
-            print(f"[TIMEOUT] Playwright timed out for URL: {url}", flush=True)
-        except Exception as e:
-            print(f"Exception in scrape_url({url}): {e}", flush=True)
+            print(f"[TIMEOUT] Page or products not loaded for: {url}")
+            # Save HTML for debugging
+            content = await main_page.content()
+            with open(f"debug_timeout_{site.get('name','no_name')}.html", "w", encoding="utf-8") as f:
+                f.write(content)
+            await main_page.close()
+            await preorder_page.close()
+            return []
+        await scroll_to_load_all(main_page, product_selector, site.get("use_mouse_wheel", False))
+        products = main_page.locator(product_selector)
+        count = await products.count()
+        if count == 0:
+            content = await main_page.content()
+            with open(f"debug_zero_products_{site.get('name','no_name')}.html", "w", encoding="utf-8") as f:
+                f.write(content)
+            print(f"[WARNING] 0 products found for selector '{product_selector}' on {url}")
+        for i in range(count):
+            try:
+                product_elem = products.nth(i)
+                name = normalize(await product_elem.locator(name_selector).text_content(timeout=15500))
+                if not site.get("skip_keywords", False) and not product_matches_keywords(name):
+                    continue
+                price = None
+                price_selector = site.get("price_selector")
+                if price_selector:
+                    try:
+                        price = (await product_elem.locator(price_selector).text_content(timeout=15500)).strip()
+                    except Exception:
+                        price = None
+                if not price:
+                    price = "Okänt"
+                product_link_elem = product_elem.locator(site.get("product_link_selector"))
+                product_href = None
+                try:
+                    product_href = await product_link_elem.get_attribute("href")
+                except Exception:
+                    product_href = None
+                if product_href and not product_href.startswith("http"):
+                    full_url = base_url.rstrip("/") + "/" + product_href.lstrip("/")
+                else:
+                    full_url = product_href or url
+                product_link = clean_product_link(full_url)
+                availability_status = await get_availability_status(product_elem, site)
+                product_hash = generate_product_hash(name, site.get("name", ""))
+                preorder_selector = site.get("preorder_selector")
+                has_preorder_button = False
+                if preorder_selector:
+                    try:
+                        preorder_elem = product_elem.locator(preorder_selector)
+                        has_preorder_button = (await preorder_elem.count()) > 0
+                    except Exception:
+                        has_preorder_button = False
+                # Improved status priority: in-stock > preorder > other
+                if availability_status == "i lager":
+                    status = "Tillbaka i lager"
+                elif has_preorder_button:
+                    status = "Förbeställningsbar"
+                else:
+                    status = availability_status
+
+                products_out.append({
+                    "hash": product_hash,
+                    "name": name,
+                    "url": product_link or url,
+                    "price": price,
+                    "status": status,
+                    "site_name": normalize(site.get("name", url))
+                })
+            except Exception as e:
+                print(f"Fel vid hantering av produkt {i} på {url}: {e}", flush=True)
+        await preorder_page.close()
+        await main_page.close()
+    except PlaywrightTimeoutError:
+        print(f"[TIMEOUT] Playwright timed out for URL: {url}", flush=True)
+    except Exception as e:
+        print(f"Exception in scrape_url({url}): {e}", flush=True)
     return products_out
 
-async def scrape_site(site):
+async def scrape_site(site, browser):
     if site.get("type", "browser").lower() == "api":
-        # Use API-based scraping
         return get_api_products(site)
-    # Browser-based scraping as before
     urls = get_urls_to_scrape(site)
     semaphore = asyncio.Semaphore(site.get("max_parallel_urls", PARALLEL_URLS_PER_SITE))
-    url_tasks = [
-        asyncio.create_task(asyncio.wait_for(scrape_url(url, site, semaphore), timeout=SITE_TIMEOUT))
-        for url in urls
-    ]
+    async def sem_scrape(url):
+        async with semaphore:
+            return await scrape_url(url, site, browser)
+    url_tasks = [asyncio.create_task(asyncio.wait_for(sem_scrape(url), timeout=SITE_TIMEOUT)) for url in urls]
     products = []
     for task in asyncio.as_completed(url_tasks):
         try:
@@ -404,20 +375,24 @@ async def main():
     if not sites:
         print("Inga sites hittades i Google Sheets eller arket är tomt.", flush=True)
         return
-    site_tasks = [
-        asyncio.create_task(asyncio.wait_for(scrape_site(site), timeout=SITE_TIMEOUT))
-        for site in sites
-    ]
     all_site_products = []
-    try:
-        for task in asyncio.as_completed(site_tasks):
-            try:
-                result = await task
-                all_site_products.append(result)
-            except asyncio.TimeoutError:
-                print("[TIMEOUT] A site scrape timed out.", flush=True)
-    except Exception as e:
-        print(f"Exception during global site scraping: {e}", flush=True)
+    async with async_playwright() as p:
+        browser = await p.chromium.launch(headless=True, args=["--disable-blink-features=AutomationControlled"])
+        # Stealth is applied per page!
+        site_tasks = [
+            asyncio.create_task(asyncio.wait_for(scrape_site(site, browser), timeout=SITE_TIMEOUT*2))
+            for site in sites
+        ]
+        try:
+            for task in asyncio.as_completed(site_tasks):
+                try:
+                    result = await task
+                    all_site_products.append(result)
+                except asyncio.TimeoutError:
+                    print("[TIMEOUT] A site scrape timed out.", flush=True)
+        except Exception as e:
+            print(f"Exception during global site scraping: {e}", flush=True)
+        await browser.close()
     found_products = {}
     for site_products in all_site_products:
         for prod in site_products:
@@ -444,7 +419,7 @@ async def main():
             })
             available_products[prod_hash] = prod["name"]
         if GOOGLE_SHEETS_CREDS and GOOGLE_SHEETS_ID and prod["status"].lower() in [
-        "i lager", "tillbaka i lager", "förbeställningsbar"
+            "i lager", "tillbaka i lager", "förbeställningsbar"
         ]:
             products_to_update_google.append({
                 'hash': prod_hash,
