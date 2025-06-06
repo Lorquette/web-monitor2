@@ -126,32 +126,34 @@ def append_row(row_data):
     response = request.execute()
     return response
 
-
 def update_or_append_rows(products_data):
     """
     Batch-uppdatera eller lägg till flera produkter i Google Sheets.
     products_data: lista av dict med produkternas data, varje dict måste ha 'hash' och övriga fält.
     """
     required_fields = ['product_name', 'price', 'url', 'store', 'hash']
-    # Validera alla produkter först
+    valid_products = []
+
     for product_data in products_data:
         for field in required_fields:
             if not product_data.get(field):
-                print(f"[!] Fält saknas i produktdata: {field}. Skipping produkt.")
-                return
+                print(f"[!] Fält saknas i produktdata: {field}. Skipping produkt med hash {product_data.get('hash')}.")
+                break
+        else:
+            valid_products.append(product_data)
+
+    if not valid_products:
+        print(f"[ERROR] No valid products to update or append!")
+        return
 
     hashes = get_all_hashes()
-
     sheet = service.spreadsheets()
     now_str = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
 
-    # Vi ska bygga två listor:
-    # 1. Uppdatera befintliga rader (row_index -> data)
-    # 2. Lägg till nya rader i slutet
     updates = []
     appends = []
 
-    for product_data in products_data:
+    for product_data in valid_products:
         product_hash = product_data['hash']
         row_data = [
             product_data['product_name'],
