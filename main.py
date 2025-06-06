@@ -270,10 +270,21 @@ async def scrape_url(url, site, semaphore):
                 browser = await p.chromium.launch(headless=True)
                 main_page = await browser.new_page(user_agent=USER_AGENT)
                 preorder_page = await browser.new_page(user_agent=USER_AGENT)
-                await main_page.goto(url, timeout=10000)
+                try:
+                    await main_page.goto(url, timeout=30000, wait_until="networkidle")
+                    await main_page.wait_for_selector(product_selector, timeout=15000)
+                except PlaywrightTimeoutError:
+                    print(f"[TIMEOUT] Page or products not loaded for: {url}")
+                    return []
                 await scroll_to_load_all(main_page, product_selector, site.get("use_mouse_wheel", False))
                 products = main_page.locator(product_selector)
                 count = await products.count()
+                if count == 0:
+                    print(f"[WARNING] 0 products found for selector '{product_selector}' on {url}")
+                    # Optionally save page content for debug:
+                    content = await main_page.content()
+                    with open("debug_zero_products.html", "w", encoding="utf-8") as f:
+                        f.write(content)
                 for i in range(count):
                     try:
                         product_elem = products.nth(i)
@@ -339,9 +350,10 @@ async def scrape_url(url, site, semaphore):
                                     in_stock = False
                             else:
                                 in_stock = (availability_status == "i lager")
-                        if in_stock:
+                        # After all in-stock and preorder checks:
+                        if availability_status == "i lager":
                             status = "Tillbaka i lager"
-                        elif preorder:
+                        elif has_preorder_button:
                             status = "Förbeställningsbar"
                         else:
                             status = availability_status
