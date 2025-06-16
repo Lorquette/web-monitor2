@@ -36,7 +36,7 @@ KEYWORDS = [
     "Journey Together", "Black Bolt", "White Flare"
 ]
 BLOCKED_KEYWORDS = [
-    "Deck Box", "Binder", "Pärm", "Portfolio", "Playmat", "Monopoly", 
+    "Deck Box", "Binder", "Pärm", "Portfolio", "Playmat", "Monopoly", "Pussel", "Trove", "Pennfodral",
     "Stacking Tin", "Mugg", "Ryggsäck", "Stort kort", "Ultra Pro", "Suddgummi", "Guiden"
 ]
 
