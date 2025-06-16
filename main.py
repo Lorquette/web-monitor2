@@ -84,6 +84,15 @@ def safe_int(value, default=1):
     except (ValueError, TypeError):
         return default
 
+async def dismiss_cookies(page):
+    try:
+        # Wait for cookie popup to appear (if any)
+        await page.wait_for_selector("#cc-b-acceptall", timeout=5000)
+        await page.click("#cc-b-acceptall")
+        await asyncio.sleep(1)
+    except Exception:
+        pass  # Popup did not appear
+
 async def send_discord_message(name, url, price, status, site_name):
     if not DISCORD_WEBHOOK:
         print("No Discord webhook set in environment variable.", flush=True)
@@ -270,6 +279,7 @@ async def scrape_url(url, site, browser):
         await stealth_async(preorder_page)
         try:
             await main_page.goto(url, timeout=30000, wait_until="networkidle")
+            await dismiss_cookies(main_page)
             await main_page.wait_for_selector(product_selector, timeout=20000)
         except PlaywrightTimeoutError:
             print(f"[TIMEOUT] Page or products not loaded for: {url}")
