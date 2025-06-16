@@ -86,12 +86,15 @@ def safe_int(value, default=1):
 
 async def dismiss_cookies(page):
     try:
-        # Wait for cookie popup to appear (if any)
-        await page.wait_for_selector("#cc-b-acceptall", timeout=5000)
-        await page.click("#cc-b-acceptall")
+        # Wait for either button to appear
+        await page.wait_for_selector("#cc-b-acceptall, #ac-acceptall", timeout=5000)
+        if await page.is_visible("#cc-b-acceptall"):
+            await page.click("#cc-b-acceptall")
+        elif await page.is_visible("#ac-acceptall"):
+            await page.click("#ac-acceptall")
         await asyncio.sleep(1)
     except Exception:
-        pass  # Popup did not appear
+        pass
 
 async def send_discord_message(name, url, price, status, site_name):
     if not DISCORD_WEBHOOK:
