@@ -28,16 +28,16 @@ USER_AGENT = (
 )
 
 PARALLEL_URLS_PER_SITE = 3  # Lowered: avoid bot detection
-GLOBAL_SCRIPT_TIMEOUT = 1800
-SITE_TIMEOUT = 1000
+GLOBAL_SCRIPT_TIMEOUT = 5400
+SITE_TIMEOUT = 3000
 
 KEYWORDS = [
     "Pokémon", "Pokemon", "Destined Rivals", "Prismatic Evolutions",
     "Journey Together", "Black Bolt", "White Flare"
 ]
 BLOCKED_KEYWORDS = [
-    "Deck Box", "Binder", "Pärm", "Portfolio", "Playmat",
-    "Stacking Tin", "Mugg", "Ryggsäck", "Stort kort", "Ultra Pro"
+    "Deck Box", "Binder", "Pärm", "Portfolio", "Playmat", "Monopoly", 
+    "Stacking Tin", "Mugg", "Ryggsäck", "Stort kort", "Ultra Pro", "Suddgummi", "Guiden"
 ]
 
 def load_json(file_path):
