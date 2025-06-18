@@ -4,7 +4,7 @@ import os
 import json
 import hashlib
 from playwright.async_api import async_playwright, TimeoutError as PlaywrightTimeoutError
-from playwright_stealth import stealth_async
+from playwright_stealth import Stealth
 import re
 import time
 import requests
@@ -278,8 +278,8 @@ async def scrape_url(url, site, browser):
     try:
         main_page = await browser.new_page(user_agent=USER_AGENT)
         preorder_page = await browser.new_page(user_agent=USER_AGENT)
-        await stealth_async(main_page)
-        await stealth_async(preorder_page)
+        await Stealth().stealth_async(main_page)
+        await Stealth().stealth_async(preorder_page)
         try:
             await main_page.goto(url, timeout=30000, wait_until="networkidle")
             await dismiss_cookies(main_page)
