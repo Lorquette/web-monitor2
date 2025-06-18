@@ -279,8 +279,8 @@ async def scrape_url(url, site, browser):
         main_page = await browser.new_page(user_agent=USER_AGENT)
         preorder_page = await browser.new_page(user_agent=USER_AGENT)
         stealth = Stealth()
-        await stealth(main_page)
-        await stealth(preorder_page)
+        await stealth.apply(main_page)
+        await stealth.apply(preorder_page)
         try:
             await main_page.goto(url, timeout=30000, wait_until="networkidle")
             await dismiss_cookies(main_page)
