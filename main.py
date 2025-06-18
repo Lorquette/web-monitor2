@@ -278,9 +278,6 @@ async def scrape_url(url, site, browser):
     try:
         main_page = await browser.new_page(user_agent=USER_AGENT)
         preorder_page = await browser.new_page(user_agent=USER_AGENT)
-        stealth = Stealth()
-        await stealth.apply(main_page)
-        await stealth.apply(preorder_page)
         try:
             await main_page.goto(url, timeout=30000, wait_until="networkidle")
             await dismiss_cookies(main_page)
@@ -390,9 +387,10 @@ async def main():
         print("Inga sites hittades i Google Sheets eller arket är tomt.", flush=True)
         return
     all_site_products = []
-    async with async_playwright() as p:
+    # Use Stealth's context manager instead of async_playwright directly!
+    async with Stealth().use_async(async_playwright()) as p:
         browser = await p.chromium.launch(headless=True, args=["--disable-blink-features=AutomationControlled"])
-        # Stealth is applied per page!
+        # REMOVE: any call to stealth_async or stealth.apply or similar!
         site_tasks = [
             asyncio.create_task(asyncio.wait_for(scrape_site(site, browser), timeout=SITE_TIMEOUT*2))
             for site in sites
