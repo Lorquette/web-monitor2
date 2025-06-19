@@ -277,7 +277,7 @@ def read_sites_from_sheet():
     sh = gc.open_by_key(SPREADSHEET_ID_S)
     worksheet = sh.worksheet("Sites")
 
-    data = worksheet.get("A1:I40") #Tillfälligt begränsad medan felsökning pågår
+    data = worksheet.get("A1:H40") #Tillfälligt begränsad medan felsökning pågår
 
     # Första raden är nycklar (kolumnrubriker) - första kolumn är 'key'
     keys = data[0]
